@@ -17,6 +17,17 @@ import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+const LANGUAGES = [
+  { label: "English", value: "en-GB" },
+  { label: "Arabic", value: "ar" },
+  { label: "French", value: "fr" },
+  { label: "Spanish", value: "es" },
+  { label: "Urdu", value: "ur" },
+  { label: "Turkish", value: "tr" },
+  { label: "German", value: "de" },
+];
+
+
 type Story = {
   id: string;
   child_id: string;
@@ -27,16 +38,38 @@ type Story = {
   delivered_at: string | null;
 };
 
+
 function getNextSundayUK(): Date {
-  // Get current time in UK timezone
+  // Build the next Sunday 17:00 Europe/London as a UTC Date
   const now = new Date();
-  const ukTime = new Date(now.toLocaleString("en-GB", { timeZone: "Europe/London" }));
-  const day = ukTime.getDay(); // 0=Sun, 1=Mon...6=Sat
-  const daysUntilSunday = day === 0 ? 7 : 7 - day;
-  const next = new Date(ukTime);
-  next.setDate(ukTime.getDate() + daysUntilSunday);
-  next.setHours(17, 0, 0, 0);
-  return next;
+
+  // Parse UK local time components using Intl
+  const fmt = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+    hour12: false,
+  });
+  const parts = Object.fromEntries(fmt.formatToParts(now).map((p) => [p.type, p.value]));
+  const ukDay = new Date(`${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`).getDay();
+
+  // Days until next Sunday (if today IS Sunday and delivery time hasn't passed yet we still want today's)
+  const ukHour = parseInt(parts.hour, 10);
+  const alreadyPassedToday = ukDay === 0 && ukHour >= 17;
+  const daysUntilSunday = ukDay === 0 ? (alreadyPassedToday ? 7 : 0) : 7 - ukDay;
+
+  // Create a UTC Date representing that Sunday at 17:00 London time
+  // We do this by starting from today midnight UTC, adding days, then finding the UTC
+  // equivalent of 17:00 London on that day via a dummy ISO string + offset calculation.
+  const targetLocal = new Date(`${parts.year}-${parts.month}-${parts.day}T17:00:00`);
+  targetLocal.setDate(targetLocal.getDate() + daysUntilSunday);
+
+  // Convert "London local 17:00" to UTC by finding the offset for that day
+  const londonStr = targetLocal.toLocaleString("en-GB", { timeZone: "Europe/London" });
+  const localStr  = targetLocal.toLocaleString("en-GB");
+  const offsetMs  = new Date(londonStr).getTime() - new Date(localStr).getTime();
+
+  return new Date(targetLocal.getTime() - offsetMs);
 }
 
 function useCountdown(target: Date) {
@@ -187,9 +220,14 @@ export default function Dashboard() {
       .from("profiles")
       .select("full_name")
       .eq("id", user.id)
-      .single()
+      .maybeSingle()
       .then(({ data }) => {
-        if (data?.full_name) setParentName(data.full_name.split(" ")[0]);
+        if (data?.full_name) {
+          setParentName(data.full_name.split(" ")[0]);
+        } else {
+          // Fall back to email prefix
+          setParentName(user.email?.split("@")[0] ?? "");
+        }
       });
   }, [user]);
 
@@ -275,8 +313,8 @@ export default function Dashboard() {
                     <h2 className="font-display text-xl font-bold text-foreground">
                       {child.name}
                     </h2>
-                    <p className="text-muted-foreground text-sm">
-                      Age {child.age} · {child.language}
+                  <p className="text-muted-foreground text-sm">
+                      Age {child.age} · {LANGUAGES.find((l) => l.value === child.language)?.label?.split(" ")[0] ?? child.language}
                     </p>
                   </div>
                 </div>
