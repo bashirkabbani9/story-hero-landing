@@ -116,11 +116,24 @@ function ChildEditor({ child, onSaved }: { child: Child; onSaved: () => void }) 
   const [language, setLanguage] = useState(child.language ?? "en-GB");
   const [saving, setSaving]     = useState(false);
   const [saved, setSaved]       = useState(false);
+  const [customInput, setCustomInput] = useState("");
 
   const toggleInterest = (label: string) =>
     setInterests((prev) =>
       prev.includes(label) ? prev.filter((i) => i !== label) : [...prev, label]
     );
+
+  const addCustomInterest = () => {
+    const trimmed = customInput.trim();
+    if (!trimmed || interests.includes(trimmed)) return;
+    setInterests((prev) => [...prev, trimmed]);
+    setCustomInput("");
+  };
+
+  const removeCustomInterest = (label: string) => {
+    if (INTERESTS.some((i) => i.label === label)) return; // don't remove preset via this
+    setInterests((prev) => prev.filter((i) => i !== label));
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -196,6 +209,49 @@ function ChildEditor({ child, onSaved }: { child: Child; onSaved: () => void }) 
             );
           })}
         </div>
+
+        {/* Custom interest input */}
+        <div className="flex gap-2 mt-3">
+          <input
+            type="text"
+            value={customInput}
+            onChange={(e) => setCustomInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCustomInterest())}
+            placeholder="Add your own..."
+            maxLength={40}
+            className="flex-1 px-3 py-2.5 rounded-xl border border-input bg-background text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+          />
+          <button
+            onClick={addCustomInterest}
+            disabled={!customInput.trim()}
+            className="px-4 py-2.5 rounded-xl border border-primary bg-purple-light text-primary text-sm font-semibold disabled:opacity-40 transition-all hover:bg-primary/10"
+          >
+            Add
+          </button>
+        </div>
+
+        {/* Custom tags */}
+        {interests.filter((i) => !INTERESTS.some((p) => p.label === i)).length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            {interests
+              .filter((i) => !INTERESTS.some((p) => p.label === i))
+              .map((tag) => (
+                <span
+                  key={tag}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-light border border-primary/30 text-primary text-xs font-medium"
+                >
+                  {tag}
+                  <button
+                    onClick={() => removeCustomInterest(tag)}
+                    className="text-primary/60 hover:text-primary transition-colors leading-none"
+                    aria-label={`Remove ${tag}`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+          </div>
+        )}
       </div>
 
       {/* Language */}

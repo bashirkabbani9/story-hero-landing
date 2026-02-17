@@ -52,6 +52,7 @@ export default function Onboarding() {
     interests: [],
     language: "en-GB",
   });
+  const [customInput, setCustomInput] = useState("");
 
   const goNext = () => setStep((s) => Math.min(s + 1, TOTAL_STEPS + 1));
   const goBack = () => setStep((s) => Math.max(s - 1, 1));
@@ -63,6 +64,17 @@ export default function Onboarding() {
         ? d.interests.filter((i) => i !== label)
         : [...d.interests, label],
     }));
+  };
+
+  const addCustomInterest = () => {
+    const trimmed = customInput.trim();
+    if (!trimmed || data.interests.includes(trimmed)) return;
+    setData((d) => ({ ...d, interests: [...d.interests, trimmed] }));
+    setCustomInput("");
+  };
+
+  const removeInterest = (label: string) => {
+    setData((d) => ({ ...d, interests: d.interests.filter((i) => i !== label) }));
   };
 
   const handleSubmit = async () => {
@@ -230,6 +242,49 @@ export default function Onboarding() {
                   );
                 })}
               </div>
+
+              {/* Custom interest input */}
+              <div className="flex gap-2 mt-1">
+                <input
+                  type="text"
+                  value={customInput}
+                  onChange={(e) => setCustomInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCustomInterest())}
+                  placeholder="Add your own..."
+                  maxLength={40}
+                  className="flex-1 px-4 py-3 rounded-xl border-2 border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground placeholder:text-primary-foreground/40 focus:outline-none focus:border-amber-warm transition-all text-sm"
+                />
+                <button
+                  onClick={addCustomInterest}
+                  disabled={!customInput.trim()}
+                  className="px-4 py-3 rounded-xl border-2 border-amber-warm bg-amber-warm/20 text-primary-foreground font-semibold text-sm disabled:opacity-40 transition-all"
+                >
+                  Add
+                </button>
+              </div>
+
+              {/* Custom tags */}
+              {data.interests.filter((i) => !INTERESTS.some((p) => p.label === i)).length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {data.interests
+                    .filter((i) => !INTERESTS.some((p) => p.label === i))
+                    .map((tag) => (
+                      <span
+                        key={tag}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-warm/20 border border-amber-warm text-primary-foreground text-xs font-medium"
+                      >
+                        {tag}
+                        <button
+                          onClick={() => removeInterest(tag)}
+                          className="text-primary-foreground/60 hover:text-primary-foreground transition-colors leading-none"
+                          aria-label={`Remove ${tag}`}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                </div>
+              )}
             </StepWrapper>
           )}
 
