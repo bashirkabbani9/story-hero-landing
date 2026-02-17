@@ -11,6 +11,7 @@ import Signup from "./pages/Signup";
 import ResetPassword from "./pages/ResetPassword";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
+import StoryReader from "./pages/StoryReader";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/story/:id"
+              element={
+                <ProtectedRoute>
+                  <StoryReader />
                 </ProtectedRoute>
               }
             />
