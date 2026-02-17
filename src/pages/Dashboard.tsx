@@ -40,36 +40,50 @@ type Story = {
 
 
 function getNextSundayUK(): Date {
-  // Build the next Sunday 17:00 Europe/London as a UTC Date
   const now = new Date();
 
-  // Parse UK local time components using Intl
-  const fmt = new Intl.DateTimeFormat("en-GB", {
+  // Get current day-of-week and hour in Europe/London
+  const londonDay = parseInt(
+    new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", weekday: "short" })
+      .format(now) === "Sun" ? "0" :
+    ["Mon","Tue","Wed","Thu","Fri","Sat"].indexOf(
+      new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", weekday: "short" }).format(now)
+    ) + 1 + ""
+  );
+  const londonHour = parseInt(
+    new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", hour: "2-digit", hour12: false }).format(now)
+  );
+
+  // Days until next Sunday at 17:00 UK time
+  const isSunday = londonDay === 0;
+  const passedThisSunday = isSunday && londonHour >= 17;
+  const daysUntilSunday = isSunday ? (passedThisSunday ? 7 : 0) : (7 - londonDay);
+
+  // Build the ISO string for that Sunday at 17:00 Europe/London
+  // by converting "Europe/London" date parts to a proper UTC instant
+  const candidate = new Date(now);
+  candidate.setDate(candidate.getDate() + daysUntilSunday);
+
+  // Format candidate date in London TZ to get Y/M/D
+  const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Europe/London",
     year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", second: "2-digit",
-    hour12: false,
-  });
-  const parts = Object.fromEntries(fmt.formatToParts(now).map((p) => [p.type, p.value]));
-  const ukDay = new Date(`${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`).getDay();
+  }).formatToParts(candidate);
+  const p = Object.fromEntries(parts.map((x) => [x.type, x.value]));
 
-  // Days until next Sunday (if today IS Sunday and delivery time hasn't passed yet we still want today's)
-  const ukHour = parseInt(parts.hour, 10);
-  const alreadyPassedToday = ukDay === 0 && ukHour >= 17;
-  const daysUntilSunday = ukDay === 0 ? (alreadyPassedToday ? 7 : 0) : 7 - ukDay;
+  // Parse as UTC midnight, then shift by London offset to get 17:00 London = UTC
+  const sundayMidnightUTC = Date.UTC(Number(p.year), Number(p.month) - 1, Number(p.day));
+  // Find the UTC offset for London on that day by comparing clocks
+  const probe = new Date(sundayMidnightUTC);
+  const londonMidnightStr = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/London",
+    hour: "2-digit", minute: "2-digit", hour12: false,
+  }).format(probe);
+  const [lh, lm] = londonMidnightStr.split(":").map(Number);
+  const londonOffsetMs = -(lh * 60 + lm) * 60 * 1000; // offset from UTC to London midnight
 
-  // Create a UTC Date representing that Sunday at 17:00 London time
-  // We do this by starting from today midnight UTC, adding days, then finding the UTC
-  // equivalent of 17:00 London on that day via a dummy ISO string + offset calculation.
-  const targetLocal = new Date(`${parts.year}-${parts.month}-${parts.day}T17:00:00`);
-  targetLocal.setDate(targetLocal.getDate() + daysUntilSunday);
-
-  // Convert "London local 17:00" to UTC by finding the offset for that day
-  const londonStr = targetLocal.toLocaleString("en-GB", { timeZone: "Europe/London" });
-  const localStr  = targetLocal.toLocaleString("en-GB");
-  const offsetMs  = new Date(londonStr).getTime() - new Date(localStr).getTime();
-
-  return new Date(targetLocal.getTime() - offsetMs);
+  // Sunday 17:00 London = UTC midnight + offset + 17h
+  return new Date(sundayMidnightUTC + londonOffsetMs + 17 * 60 * 60 * 1000);
 }
 
 function useCountdown(target: Date) {
