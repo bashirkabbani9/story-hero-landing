@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sparkles, CheckCircle, Loader2 } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
 
 export default function LeadMagnetForm() {
   const [formData, setFormData] = useState({
@@ -42,17 +42,17 @@ export default function LeadMagnetForm() {
       <div id="get-story" className="py-20 px-4">
         <div className="max-w-lg mx-auto text-center">
           <div className="bg-card rounded-3xl p-10 shadow-card border border-border">
-            <div className="w-16 h-16 bg-purple-light rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-8 h-8 text-primary" />
-            </div>
+            <div className="text-5xl mb-5 animate-float">✨</div>
             <h3 className="font-display text-2xl font-bold text-foreground mb-3">
-              Your story is on its way! 🌟
+              Check your email!
             </h3>
             <p className="text-muted-foreground leading-relaxed">
-              We're crafting a magical, personalised story just for{" "}
-              <span className="font-semibold text-primary">{formData.child_name}</span>.
-              Keep an eye on your inbox at{" "}
-              <span className="font-semibold text-primary">{formData.parent_email}</span>.
+              A personalised story for{" "}
+              <span className="font-semibold text-primary">{formData.child_name}</span>{" "}
+              is on its way ✨
+            </p>
+            <p className="text-sm text-muted-foreground mt-3">
+              We'll send it to <span className="font-medium">{formData.parent_email}</span>.
             </p>
           </div>
         </div>

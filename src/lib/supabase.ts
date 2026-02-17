@@ -10,6 +10,7 @@ export type Profile = {
   id: string;
   email: string;
   full_name: string | null;
+  email_notifications: boolean;
   created_at: string;
 };
 
