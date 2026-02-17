@@ -1,4 +1,5 @@
 import { Check, Star } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const plans = [
   {
@@ -138,11 +139,12 @@ export default function PricingSection() {
                 ))}
               </ul>
 
-              <button
-                className={`w-full py-3.5 rounded-xl font-semibold transition-all hover:opacity-90 hover:scale-[1.01] ${plan.ctaClass}`}
+              <Link
+                to="/signup"
+                className={`block w-full text-center py-3.5 rounded-xl font-semibold transition-all hover:opacity-90 hover:scale-[1.01] ${plan.ctaClass}`}
               >
                 {plan.cta}
-              </button>
+              </Link>
 
               {!plan.popular && (
                 <p className="text-center text-xs text-muted-foreground mt-3">
