@@ -1,6 +1,10 @@
-import { BookOpen, Moon, Star } from "lucide-react";
+import { Moon } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Navbar() {
+  const { user, loading } = useAuth();
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-sm border-b border-border">
       <div className="container max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -17,6 +21,14 @@ export default function Navbar() {
           <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:block">
             Pricing
           </a>
+          {!loading && !user && (
+            <Link
+              to="/login"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:inline"
+            >
+              Sign In
+            </Link>
+          )}
           <a
             href="#get-story"
             className="px-4 py-2 gradient-purple text-primary-foreground text-sm font-medium rounded-full shadow-purple hover:opacity-90 transition-opacity"
