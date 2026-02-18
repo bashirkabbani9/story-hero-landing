@@ -291,6 +291,110 @@ function ChildEditor({ child, onSaved }: { child: Child; onSaved: () => void }) 
   );
 }
 
+// ─── Child card in the My Children section ───────────────────────────────────
+
+function ChildCard({
+  child,
+  onSaved,
+  onDeleted,
+}: {
+  child: Child;
+  onSaved: () => void;
+  onDeleted: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [deletingChild, setDeletingChild] = useState(false);
+
+  const customInterests = child.interests?.filter(
+    (i) => !INTERESTS.some((p) => p.label === i)
+  );
+
+  const handleDelete = async () => {
+    setDeletingChild(true);
+    const { error } = await supabase.from("children").delete().eq("id", child.id);
+    setDeletingChild(false);
+    if (error) {
+      toast({ title: "Error deleting", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: `${child.name} removed`, description: "All their stories have been deleted too." });
+      onDeleted();
+    }
+  };
+
+  return (
+    <div className="border-b border-border last:border-0">
+      {/* Summary row */}
+      <div className="flex items-center gap-4 px-5 py-4 min-h-[64px]">
+        <span className="text-2xl flex-shrink-0">{child.gender === "girl" ? "👧" : "👦"}</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-foreground">{child.name}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Age {child.age} · {LANGUAGES.find((l) => l.value === child.language)?.label ?? child.language}
+          </p>
+          {child.interests?.length > 0 && (
+            <p className="text-xs text-muted-foreground mt-0.5 truncate">
+              {child.interests.slice(0, 4).join(", ")}
+              {child.interests.length > 4 ? ` +${child.interests.length - 4} more` : ""}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-secondary transition-colors"
+          >
+            {expanded ? "Close" : "Edit"}
+          </button>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                className="p-1.5 rounded-lg border border-destructive/30 text-destructive hover:bg-destructive/10 transition-colors"
+                aria-label={`Delete ${child.name}`}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Remove {child.name}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to remove <strong>{child.name}</strong>? This will also delete all their stories.
+                  This action <strong>cannot be undone</strong>.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  disabled={deletingChild}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {deletingChild ? (
+                    <><Loader2 className="w-4 h-4 animate-spin mr-2" />Deleting…</>
+                  ) : (
+                    "Yes, remove"
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </div>
+
+      {/* Inline editor */}
+      {expanded && (
+        <div className="bg-muted/30 border-t border-border">
+          <ChildEditor
+            child={child}
+            onSaved={() => { setExpanded(false); onSaved(); }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Settings page ───────────────────────────────────────────────────────
 
 export default function Settings() {
@@ -300,10 +404,7 @@ export default function Settings() {
   const [emailNotifs, setEmailNotifs] = useState(false);
   const [loadingNotifs, setLoadingNotifs] = useState(true);
   const [savingNotifs, setSavingNotifs] = useState(false);
-  const [editingChild, setEditingChild] = useState(false);
   const [deleting, setDeleting] = useState(false);
-
-  const child = childProfiles[0] ?? null;
 
   // Fetch notification preference
   useEffect(() => {
@@ -392,25 +493,42 @@ export default function Settings() {
           />
         </Section>
 
-        {/* Child profile */}
-        {child && (
-          <Section title={`${child.name}'s Profile`}>
-            <Row
-              icon={<span className="text-xl">{child.gender === "girl" ? "👧" : "👦"}</span>}
-              label={`Edit ${child.name}'s Profile`}
-              sublabel={`Age ${child.age} · ${LANGUAGES.find((l) => l.value === child.language)?.label ?? child.language}`}
-              onClick={() => setEditingChild((v) => !v)}
-              right={
-                <ChevronRight
-                  className={`w-4 h-4 text-muted-foreground transition-transform ${editingChild ? "rotate-90" : ""}`}
-                />
-              }
-            />
-            {editingChild && (
-              <ChildEditor child={child} onSaved={() => { refreshChildren(); }} />
-            )}
-          </Section>
-        )}
+        {/* My Children */}
+        <section className="bg-card border border-border rounded-2xl overflow-hidden shadow-card">
+          <div className="px-5 py-4 border-b border-border">
+            <h2 className="font-display font-semibold text-foreground text-base">My Children</h2>
+          </div>
+
+          {childProfiles.length === 0 ? (
+            <p className="px-5 py-4 text-sm text-muted-foreground">No children added yet.</p>
+          ) : (
+            childProfiles.map((c) => (
+              <ChildCard
+                key={c.id}
+                child={c}
+                onSaved={refreshChildren}
+                onDeleted={refreshChildren}
+              />
+            ))
+          )}
+
+          {/* Add Another Child */}
+          <div className="border-t border-border">
+            <Link
+              to="/onboarding?addChild=true"
+              className="flex items-center gap-4 px-5 py-4 min-h-[56px] hover:bg-muted/50 transition-colors group"
+            >
+              <span className="text-muted-foreground group-hover:text-primary transition-colors">
+                <Sparkles className="w-5 h-5" />
+              </span>
+              <span className="flex-1">
+                <span className="block text-sm font-medium text-foreground">Add Another Child</span>
+                <span className="block text-xs text-muted-foreground mt-0.5">Set up a new story profile</span>
+              </span>
+              <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            </Link>
+          </div>
+        </section>
 
         {/* Notifications */}
         <Section title="Notifications">
@@ -443,15 +561,6 @@ export default function Settings() {
           </div>
         </Section>
 
-        {/* Add another child */}
-        <Section title="Family">
-          <Row
-            icon={<Sparkles className="w-5 h-5" />}
-            label="Add Another Child"
-            sublabel="Set up a new story profile"
-            onClick={() => navigate("/onboarding")}
-          />
-        </Section>
 
         {/* Account actions */}
         <Section title="Account">
