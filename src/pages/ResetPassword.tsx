@@ -79,7 +79,7 @@ export default function ResetPassword() {
             <div className="w-14 h-14 bg-amber-warm/20 border border-amber-warm/30 rounded-full flex items-center justify-center">
               <Moon className="w-7 h-7 text-amber-warm" />
             </div>
-            <span className="font-display text-2xl font-bold text-primary-foreground">Bedtime Stories</span>
+            <span className="font-display text-2xl font-bold text-primary-foreground">Little Hero Library</span>
           </Link>
         </div>
 

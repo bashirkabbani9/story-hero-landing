@@ -19,7 +19,7 @@ export default function SmartHome() {
           <div className="w-14 h-14 gradient-amber rounded-full flex items-center justify-center animate-pulse">
             <Moon className="w-7 h-7 text-accent-foreground" />
           </div>
-          <p className="font-display text-lg">Loading…</p>
+          <p className="font-display text-lg">Little Hero Library…</p>
         </div>
       </div>
     );

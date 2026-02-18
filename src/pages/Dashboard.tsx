@@ -271,12 +271,12 @@ export default function Dashboard() {
       {/* Top bar */}
       <nav className="sticky top-0 z-10 border-b border-border bg-card/80 backdrop-blur-sm">
         <div className="container max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/dashboard" className="flex items-center gap-2">
             <div className="w-8 h-8 gradient-purple rounded-full flex items-center justify-center">
               <Moon className="w-4 h-4 text-primary-foreground" />
             </div>
             <span className="font-display font-semibold text-lg text-foreground">
-              Bedtime Stories <span className="text-accent">✨</span>
+              Little Hero Library <span className="text-accent">✨</span>
             </span>
           </Link>
           <div className="flex items-center gap-3">
