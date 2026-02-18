@@ -11,8 +11,8 @@ export default function Footer() {
               <Moon className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <span className="font-display font-bold text-xl text-primary-foreground block">
-                Bedtime Stories
+            <span className="font-display font-bold text-xl text-primary-foreground block">
+                Little Hero Library
               </span>
               <span className="text-primary-foreground/50 text-xs">
                 Where every child is the hero
@@ -44,7 +44,7 @@ export default function Footer() {
 
         <div className="border-t border-primary-foreground/10 mt-8 pt-8 text-center">
           <p className="text-primary-foreground/30 text-xs">
-            © {new Date().getFullYear()} Bedtime Stories. All rights reserved.
+            © {new Date().getFullYear()} Little Hero Library. All rights reserved.
           </p>
         </div>
       </div>
