@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase, Child } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import {
   Moon,
   Settings,
@@ -213,7 +213,8 @@ function EmptyStories() {
 
 export default function Dashboard() {
   const { user, signOut, children } = useAuth();
-  const [child, setChild] = useState<Child | null>(null);
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const child = children.find((c) => c.id === selectedChildId) ?? children[0] ?? null;
   const [stories, setStories] = useState<Story[]>([]);
   const [loadingStories, setLoadingStories] = useState(true);
   const [parentName, setParentName] = useState<string>("");
@@ -223,9 +224,6 @@ export default function Dashboard() {
   const countdown = useCountdown(nextSunday);
   const streak = calculateStreak(stories);
 
-  useEffect(() => {
-    if (children.length > 0) setChild(children[0]);
-  }, [children]);
 
   // Fetch parent name from profiles
   useEffect(() => {
@@ -310,6 +308,26 @@ export default function Dashboard() {
             ! 👋
           </h1>
         </div>
+
+        {/* Child selector tabs — shown only when there are multiple children */}
+        {children.length > 1 && (
+          <div className="animate-fade-up flex gap-2 flex-wrap" style={{ animationDelay: "0.03s" }}>
+            {children.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setSelectedChildId(c.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 font-medium text-sm transition-all ${
+                  child?.id === c.id
+                    ? "border-primary bg-primary text-primary-foreground shadow-purple"
+                    : "border-border bg-card text-muted-foreground hover:border-primary hover:text-foreground"
+                }`}
+              >
+                <span>{c.gender === "girl" ? "👧" : "👦"}</span>
+                {c.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* SECTION 1 — CHILD CARD */}
         {child && (
@@ -441,7 +459,7 @@ export default function Dashboard() {
 
             {/* Add Another Child */}
             <Link
-              to="/onboarding"
+              to="/onboarding?addChild=true"
               className="flex items-center gap-3 bg-card border border-border rounded-2xl px-5 py-4 hover:border-primary hover:shadow-soft transition-all duration-200 group"
             >
               <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center flex-shrink-0 group-hover:gradient-purple transition-all duration-200">
