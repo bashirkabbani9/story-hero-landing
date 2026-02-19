@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Moon, Mail, Lock, User, Loader2, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { redirectToStripeCheckout, PENDING_PRICE_KEY } from "@/lib/stripeCheckout";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -46,7 +47,18 @@ export default function Signup() {
 
       // If session exists immediately (email confirmation disabled), redirect
       if (data.session) {
-        navigate("/onboarding", { replace: true });
+        // Check if there's a pending Stripe checkout
+        const pendingPriceId = localStorage.getItem(PENDING_PRICE_KEY);
+        if (pendingPriceId) {
+          localStorage.removeItem(PENDING_PRICE_KEY);
+          try {
+            await redirectToStripeCheckout(pendingPriceId, formData.email);
+          } catch {
+            navigate("/onboarding", { replace: true });
+          }
+        } else {
+          navigate("/onboarding", { replace: true });
+        }
       } else {
         setSuccess(true);
       }

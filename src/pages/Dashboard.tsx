@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import {
@@ -219,10 +219,23 @@ export default function Dashboard() {
   const [loadingStories, setLoadingStories] = useState(true);
   const [parentName, setParentName] = useState<string>("");
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const nextSunday = getNextSundayUK();
   const countdown = useCountdown(nextSunday);
   const streak = calculateStreak(stories);
+
+  // Show success toast after Stripe checkout
+  useEffect(() => {
+    if (searchParams.get("checkout") === "success") {
+      toast({
+        title: "Welcome to Little Hero Library! 🎉",
+        description: "Your first story is being created — check back soon! ✨",
+      });
+      // Remove the query param without a page reload
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
 
   // Fetch parent name from profiles
@@ -442,11 +455,15 @@ export default function Dashboard() {
             </button>
 
             {/* Manage Subscription */}
-            <a
-              href="https://billing.stripe.com/p/login/placeholder"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 bg-card border border-border rounded-2xl px-5 py-4 hover:border-primary hover:shadow-soft transition-all duration-200 group"
+            <button
+              onClick={() =>
+                toast({
+                  title: "Subscription management coming soon",
+                  description:
+                    "Email bashir@alkabbanisolutions.co.uk for any billing questions.",
+                })
+              }
+              className="flex items-center gap-3 bg-card border border-border rounded-2xl px-5 py-4 hover:border-primary hover:shadow-soft transition-all duration-200 group text-left w-full"
             >
               <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center flex-shrink-0 group-hover:gradient-purple transition-all duration-200">
                 <ExternalLink className="w-4 h-4 text-primary group-hover:text-primary-foreground" />
@@ -455,7 +472,7 @@ export default function Dashboard() {
                 <p className="font-semibold text-foreground text-sm">Manage Subscription</p>
                 <p className="text-muted-foreground text-xs">Billing & plan details</p>
               </div>
-            </a>
+            </button>
 
             {/* Add Another Child */}
             <Link

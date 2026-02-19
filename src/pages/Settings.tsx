@@ -489,7 +489,13 @@ export default function Settings() {
             icon={<ExternalLink className="w-5 h-5" />}
             label="Manage Subscription"
             sublabel="Billing, plan changes & invoices"
-            href="https://billing.stripe.com/p/login/placeholder"
+            onClick={() =>
+              toast({
+                title: "Subscription management coming soon",
+                description:
+                  "Email bashir@alkabbanisolutions.co.uk for any billing questions.",
+              })
+            }
           />
         </Section>
 
@@ -611,7 +617,7 @@ export default function Settings() {
         </Section>
 
         <p className="text-center text-xs text-muted-foreground pb-4">
-          Bedtime Stories · Made with ✨ and love
+          Little Hero Library · Made with ✨ and love
         </p>
       </main>
     </div>
