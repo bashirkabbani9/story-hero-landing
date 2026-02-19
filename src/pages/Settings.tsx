@@ -444,8 +444,10 @@ export default function Settings() {
   };
 
   const handleSignOut = async () => {
+    localStorage.clear();
+    sessionStorage.clear();
     await signOut();
-    navigate("/login", { replace: true });
+    navigate("/", { replace: true });
   };
 
   return (

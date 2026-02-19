@@ -221,6 +221,13 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const handleSignOut = async () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    await signOut();
+    navigate("/", { replace: true });
+  };
+
   const nextSunday = getNextSundayUK();
   const countdown = useCountdown(nextSunday);
   const streak = calculateStreak(stories);
@@ -301,7 +308,7 @@ export default function Dashboard() {
               <Settings className="w-5 h-5" />
             </Link>
             <button
-              onClick={signOut}
+              onClick={handleSignOut}
               className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:block"
             >
               Sign out
