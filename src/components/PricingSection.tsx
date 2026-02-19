@@ -1,12 +1,8 @@
 import { Check, Star, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loadStripe } from "@stripe/stripe-js";
 import { useAuth } from "@/contexts/AuthContext";
-
-const STRIPE_PUBLISHABLE_KEY = "pk_test_51T1ruhBf7Ygg5uvwJEUecbSbxQ0KWSBYBSoMsTGmoY4LGW62UiIJAX28a6uNnYWKjXoL7SogKZ9SUvKwpbMOtlo500ZLy7GXCE";
-const SUCCESS_URL = "https://story-hero-landing-jet.vercel.app/dashboard?checkout=success";
-const CANCEL_URL = "https://story-hero-landing-jet.vercel.app/#pricing";
+import { redirectToStripeCheckout, PENDING_PRICE_KEY } from "@/lib/stripeCheckout";
 
 const plans = [
   {
@@ -57,24 +53,14 @@ export default function PricingSection() {
   const handleCheckout = async (priceId: string) => {
     if (!user) {
       // Store intended price so we can redirect after signup
-      sessionStorage.setItem("pendingPriceId", priceId);
+      localStorage.setItem(PENDING_PRICE_KEY, priceId);
       navigate("/signup");
       return;
     }
 
     setLoadingPriceId(priceId);
     try {
-      const stripe = await loadStripe(STRIPE_PUBLISHABLE_KEY);
-      if (!stripe) throw new Error("Stripe failed to load");
-
-      // @ts-expect-error redirectToCheckout is available in legacy Stripe.js
-      await stripe.redirectToCheckout({
-        lineItems: [{ price: priceId, quantity: 1 }],
-        mode: "subscription",
-        successUrl: SUCCESS_URL,
-        cancelUrl: CANCEL_URL,
-        customerEmail: user.email ?? undefined,
-      });
+      await redirectToStripeCheckout(priceId, user.email ?? undefined);
     } catch (err) {
       console.error("Stripe checkout error:", err);
     } finally {
