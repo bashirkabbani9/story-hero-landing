@@ -1,9 +1,17 @@
-import { Check, Star } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Check, Star, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { loadStripe } from "@stripe/stripe-js";
+import { useAuth } from "@/contexts/AuthContext";
+
+const STRIPE_PUBLISHABLE_KEY = "pk_test_51T1ruhBf7Ygg5uvwJEUecbSbxQ0KWSBYBSoMsTGmoY4LGW62UiIJAX28a6uNnYWKjXoL7SogKZ9SUvKwpbMOtlo500ZLy7GXCE";
+const SUCCESS_URL = "https://story-hero-landing-jet.vercel.app/dashboard?checkout=success";
+const CANCEL_URL = "https://story-hero-landing-jet.vercel.app/#pricing";
 
 const plans = [
   {
     name: "Monthly",
+    priceId: "price_1T1rzaBf7Ygg5uvwXAKt9iHz",
     price: "£7.99",
     period: "/month",
     description: "Perfect for trying it out",
@@ -21,6 +29,7 @@ const plans = [
   },
   {
     name: "Annual",
+    priceId: "price_1T1s0lBf7Ygg5uvwRoXojJwk",
     price: "£5.99",
     period: "/month",
     billed: "Billed £71.88/year",
@@ -41,6 +50,38 @@ const plans = [
 ];
 
 export default function PricingSection() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [loadingPriceId, setLoadingPriceId] = useState<string | null>(null);
+
+  const handleCheckout = async (priceId: string) => {
+    if (!user) {
+      // Store intended price so we can redirect after signup
+      sessionStorage.setItem("pendingPriceId", priceId);
+      navigate("/signup");
+      return;
+    }
+
+    setLoadingPriceId(priceId);
+    try {
+      const stripe = await loadStripe(STRIPE_PUBLISHABLE_KEY);
+      if (!stripe) throw new Error("Stripe failed to load");
+
+      // @ts-expect-error redirectToCheckout is available in legacy Stripe.js
+      await stripe.redirectToCheckout({
+        lineItems: [{ price: priceId, quantity: 1 }],
+        mode: "subscription",
+        successUrl: SUCCESS_URL,
+        cancelUrl: CANCEL_URL,
+        customerEmail: user.email ?? undefined,
+      });
+    } catch (err) {
+      console.error("Stripe checkout error:", err);
+    } finally {
+      setLoadingPriceId(null);
+    }
+  };
+
   return (
     <section id="pricing" className="py-20 px-4 bg-background">
       <div className="max-w-5xl mx-auto">
@@ -139,12 +180,14 @@ export default function PricingSection() {
                 ))}
               </ul>
 
-              <Link
-                to="/signup"
-                className={`block w-full text-center py-3.5 rounded-xl font-semibold transition-all hover:opacity-90 hover:scale-[1.01] ${plan.ctaClass}`}
+              <button
+                onClick={() => handleCheckout(plan.priceId)}
+                disabled={loadingPriceId === plan.priceId}
+                className={`flex items-center justify-center gap-2 w-full text-center py-3.5 rounded-xl font-semibold transition-all hover:opacity-90 hover:scale-[1.01] disabled:opacity-70 disabled:cursor-not-allowed disabled:scale-100 ${plan.ctaClass}`}
               >
+                {loadingPriceId === plan.priceId && <Loader2 className="w-4 h-4 animate-spin" />}
                 {plan.cta}
-              </Link>
+              </button>
 
               {!plan.popular && (
                 <p className="text-center text-xs text-muted-foreground mt-3">
