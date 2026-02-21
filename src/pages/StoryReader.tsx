@@ -153,7 +153,7 @@ const BookPage = forwardRef<HTMLDivElement, BookPageProps>(
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              objectPosition: "center",
+              objectPosition: "center top",
             }}
           />
         )}
@@ -461,56 +461,61 @@ export default function StoryReader() {
             renderOnlyPageLengthChange={false}
           >
             {/* ── COVER ── */}
-            <BookPage bgImage={story.cover_image_url} bedtime={bedtime}>
-              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "50%", background: gradientBottom, pointerEvents: "none" }} />
-              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "24px", paddingBottom: "40px", zIndex: 10, textAlign: "center" }}>
-                <h1 style={{ ...storyFont, fontSize: isMobile ? "32px" : "42px", lineHeight: 1.2 }}>{story.title}</h1>
-                <p style={{ ...storyFont, fontSize: isMobile ? "16px" : "20px", opacity: 0.85, marginTop: "12px" }}>A story for {childName} ✨</p>
+             <BookPage bgImage={pages[0]?.illustration_url ?? story.cover_image_url} bedtime={bedtime} className="cover-page">
+              {/* Darken overlay for cover */}
+              <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)", pointerEvents: "none" }} />
+              {/* Book spine shadow on right edge */}
+              <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: "20px", background: "linear-gradient(to left, rgba(0,0,0,0.4), transparent)", pointerEvents: "none", zIndex: 5 }} />
+              {/* Title centred */}
+              <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px", zIndex: 10, textAlign: "center" }}>
+                <h1 style={{ ...storyFont, fontSize: isMobile ? "28px" : "38px", lineHeight: 1.2 }}>{story.title}</h1>
+                <p style={{ ...storyFont, fontSize: isMobile ? "14px" : "18px", opacity: 0.85, marginTop: "12px" }}>A story for {childName} ✨</p>
               </div>
             </BookPage>
 
             {/* ── STORY PAGES ── */}
             {pages.map((page) => {
-              const isShort = page.text.length < 80;
-              const pos = isShort ? "top" : "bottom";
               return (
                 <BookPage key={page.id} bgImage={page.illustration_url} bedtime={bedtime}>
+                  {/* Gradient overlay — small strip at bottom */}
                   <div
                     style={{
                       position: "absolute",
-                      [pos]: 0,
+                      bottom: 0,
                       left: 0,
                       right: 0,
-                      height: "50%",
-                      background: pos === "bottom" ? gradientBottom : gradientTop,
+                      height: "35%",
+                      background: gradientBottom,
                       pointerEvents: "none",
                     }}
                   />
+                  {/* Text caption at bottom */}
                   <div
                     style={{
                       position: "absolute",
-                      [pos]: 0,
+                      bottom: 0,
                       left: 0,
                       right: 0,
-                      padding: "24px",
-                      ...(pos === "bottom" ? { paddingBottom: "40px" } : { paddingTop: "40px" }),
+                      padding: isMobile ? "12px 16px 20px" : "16px 20px 24px",
                       zIndex: 10,
+                      maxHeight: "25%",
+                      overflow: "hidden",
                     }}
                   >
-                    <p style={{ ...storyFont, fontSize: isMobile ? "20px" : "24px", lineHeight: 1.6, textAlign: "center" }}>
+                    <p style={{ ...storyFont, fontSize: isMobile ? "15px" : "18px", lineHeight: 1.5, textAlign: "center" }}>
                       {page.text}
                     </p>
                     <span
                       style={{
                         display: "block",
                         textAlign: "center",
-                        marginTop: "8px",
-                        color: "rgba(255,255,255,0.5)",
+                        marginTop: "4px",
+                        color: "rgba(255,255,255,0.4)",
                         fontFamily: "'Bubblegum Sans', cursive",
-                        fontSize: "12px",
+                        fontSize: "11px",
                       }}
                     >
-                      Page {page.page_number}
+                      {page.page_number}
                     </span>
                   </div>
                 </BookPage>

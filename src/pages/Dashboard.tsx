@@ -148,7 +148,7 @@ function isNew(dateStr: string): boolean {
   return Date.now() - new Date(dateStr).getTime() < 7 * 24 * 60 * 60 * 1000;
 }
 
-function StoryCard({ story }: { story: Story }) {
+function StoryCard({ story, childName }: { story: Story; childName?: string }) {
   const navigate = useNavigate();
   const deliveryDate = story.delivered_at ?? story.created_at;
   const [coverUrl, setCoverUrl] = useState<string | null>(story.cover_image_url);
@@ -186,15 +186,20 @@ function StoryCard({ story }: { story: Story }) {
             src={coverUrl}
             alt=""
             className="absolute inset-0 w-full h-full object-cover"
+            style={{ objectPosition: "center top" }}
           />
         )}
-        {/* Dark gradient overlay for text readability */}
+        {/* Dark overlay for readability */}
         <div
           className="absolute inset-0"
           style={{
-            background:
-              "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.15) 40%, transparent 60%)",
+            background: "rgba(0,0,0,0.3)",
           }}
+        />
+        {/* Book spine shadow on left edge */}
+        <div
+          className="absolute top-0 left-0 bottom-0 w-3"
+          style={{ background: "linear-gradient(to right, rgba(0,0,0,0.4), transparent)" }}
         />
 
         {/* Fallback icon when no image */}
@@ -214,24 +219,22 @@ function StoryCard({ story }: { story: Story }) {
           </span>
         )}
 
-        {/* Title + date overlaid at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
+        {/* Title centred like a book cover */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-4 z-10 text-center">
           <p
-            className="font-display font-semibold text-sm leading-snug line-clamp-2"
-            style={{ color: "#fff", textShadow: "1px 1px 4px rgba(0,0,0,0.6)" }}
+            className="font-semibold text-sm leading-snug line-clamp-3"
+            style={{ color: "#fff", textShadow: "2px 2px 8px rgba(0,0,0,0.7)", fontFamily: "'Bubblegum Sans', cursive" }}
           >
             {story.title}
           </p>
-          <p
-            className="text-xs mt-1"
-            style={{ color: "rgba(255,255,255,0.7)", textShadow: "1px 1px 3px rgba(0,0,0,0.5)" }}
-          >
-            {new Date(deliveryDate).toLocaleDateString("en-GB", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
-          </p>
+          {childName && (
+            <p
+              className="text-xs mt-1.5"
+              style={{ color: "rgba(255,255,255,0.75)", textShadow: "1px 1px 4px rgba(0,0,0,0.6)", fontFamily: "'Bubblegum Sans', cursive" }}
+            >
+              A story for {childName}
+            </p>
+          )}
         </div>
       </div>
     </button>
@@ -480,7 +483,7 @@ export default function Dashboard() {
               {stories.length === 0 ? (
                 <EmptyStories />
               ) : (
-                stories.map((story) => <StoryCard key={story.id} story={story} />)
+                stories.map((story) => <StoryCard key={story.id} story={story} childName={child?.name} />)
               )}
             </div>
           )}
