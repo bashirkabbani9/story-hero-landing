@@ -176,14 +176,18 @@ function StoryCard({ story }: { story: Story }) {
       <div
         className="relative aspect-[3/4] w-full"
         style={{
-          backgroundImage: coverUrl ? `url(${coverUrl})` : undefined,
           background: coverUrl
             ? undefined
             : "linear-gradient(135deg, hsl(270, 38%, 20%) 0%, hsl(270, 45%, 35%) 50%, hsl(280, 40%, 45%) 100%)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
         }}
       >
+        {coverUrl && (
+          <img
+            src={coverUrl}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
         {/* Dark gradient overlay for text readability */}
         <div
           className="absolute inset-0"
