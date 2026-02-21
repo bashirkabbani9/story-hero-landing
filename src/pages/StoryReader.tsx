@@ -159,42 +159,8 @@ const BookPage = forwardRef<HTMLDivElement, BookPageProps>(
 );
 BookPage.displayName = "BookPage";
 
-// ─── Text overlay with gradient ─────────────────────────────────────────────
 
-function TextOverlay({
-  text,
-  position = "bottom",
-  bedtime,
-  className = "",
-}: {
-  text: React.ReactNode;
-  position?: "top" | "bottom";
-  bedtime: boolean;
-  className?: string;
-}) {
-  const gradientBase = bedtime
-    ? "rgba(13, 13, 26, 0.85)"
-    : "rgba(0, 0, 0, 0.65)";
-  const gradientTransparent = "rgba(0, 0, 0, 0)";
 
-  const gradient =
-    position === "bottom"
-      ? `linear-gradient(to bottom, ${gradientTransparent} 0%, ${gradientBase} 100%)`
-      : `linear-gradient(to top, ${gradientTransparent} 0%, ${gradientBase} 100%)`;
-
-  return (
-    <div
-      className={`absolute left-0 right-0 ${
-        position === "bottom" ? "bottom-0" : "top-0"
-      } px-5 sm:px-8 ${
-        position === "bottom" ? "pb-10 pt-20" : "pt-10 pb-20"
-      } ${className}`}
-      style={{ background: gradient }}
-    >
-      {text}
-    </div>
-  );
-}
 
 // ─── Main component ─────────────────────────────────────────────────────────
 
@@ -387,158 +353,18 @@ export default function StoryReader() {
     );
   }
 
-  // Build all pages as an array for the flip book
-  const bookPages: React.ReactNode[] = [];
+  // ── Text/gradient helpers ──
+  const gradientBottom = bedtime
+    ? "linear-gradient(to top, rgba(13,13,26,0.85), transparent)"
+    : "linear-gradient(to top, rgba(0,0,0,0.7), transparent)";
+  const gradientTop = bedtime
+    ? "linear-gradient(to bottom, rgba(13,13,26,0.85), transparent)"
+    : "linear-gradient(to bottom, rgba(0,0,0,0.7), transparent)";
 
-  // ── Cover page ──
-  bookPages.push(
-    <BookPage
-      key="cover"
-      bgImage={story.cover_image_url}
-      bedtime={bedtime}
-    >
-      <TextOverlay
-        bedtime={bedtime}
-        position="bottom"
-        text={
-          <div className="text-center space-y-3">
-            <h1
-              style={{
-                ...storyFont,
-                fontSize: isMobile ? "32px" : "42px",
-                lineHeight: 1.2,
-              }}
-            >
-              {story.title}
-            </h1>
-            <p
-              style={{
-                ...storyFont,
-                fontSize: isMobile ? "16px" : "20px",
-                opacity: 0.85,
-              }}
-            >
-              A story for {childName} ✨
-            </p>
-          </div>
-        }
-      />
-    </BookPage>
-  );
-
-  // ── Story pages ──
-  pages.forEach((page) => {
-    const isShortText = page.text.length < 80;
-    bookPages.push(
-      <BookPage
-        key={page.id}
-        bgImage={page.illustration_url}
-        bedtime={bedtime}
-      >
-        <TextOverlay
-          bedtime={bedtime}
-          position={isShortText ? "top" : "bottom"}
-          text={
-            <>
-              <p
-                style={{
-                  ...storyFont,
-                  fontSize: isMobile ? "20px" : "24px",
-                  lineHeight: 1.6,
-                  textAlign: "center",
-                }}
-              >
-                {page.text}
-              </p>
-              <p
-                className="text-center mt-3"
-                style={{
-                  ...storyFont,
-                  fontSize: "13px",
-                  opacity: 0.5,
-                }}
-              >
-                {page.page_number}
-              </p>
-            </>
-          }
-        />
-      </BookPage>
-    );
-  });
-
-  // ── End page ──
-  const lastPageImg =
-    pages[pages.length - 1]?.illustration_url ?? story.cover_image_url;
-  bookPages.push(
-    <BookPage key="end" bgImage={lastPageImg} bedtime={bedtime}>
-      <div className="absolute inset-0 flex flex-col items-center justify-center px-6 gap-5"
-        style={{
-          background: bedtime
-            ? "rgba(13, 13, 26, 0.75)"
-            : "rgba(0, 0, 0, 0.55)",
-        }}
-      >
-        <span className="text-6xl animate-float">🌙</span>
-        <h2
-          style={{
-            ...storyFont,
-            fontSize: isMobile ? "32px" : "42px",
-          }}
-        >
-          The End
-        </h2>
-        <p
-          style={{
-            ...storyFont,
-            fontSize: isMobile ? "16px" : "20px",
-            opacity: 0.8,
-          }}
-        >
-          Sweet dreams, {childName} ✨
-        </p>
-
-        <StarRating
-          storyId={story.id}
-          initial={story.parent_rating}
-          bedtime={bedtime}
-        />
-
-        <div className="flex flex-col sm:flex-row gap-3 mt-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              flipBookRef.current?.pageFlip()?.flip(0);
-            }}
-            className="px-5 py-2.5 rounded-full font-semibold text-sm border transition-all hover:opacity-80 active:scale-95"
-            style={{
-              ...storyFont,
-              fontSize: "14px",
-              borderColor: bedtime ? "#f5c56c44" : "#ffffff44",
-              background: "transparent",
-            }}
-          >
-            Read again
-          </button>
-          <Link
-            to="/dashboard"
-            onClick={(e) => e.stopPropagation()}
-            className="px-5 py-2.5 rounded-full font-semibold text-sm transition-all hover:opacity-90 active:scale-95 inline-flex items-center gap-2"
-            style={{
-              ...storyFont,
-              fontSize: "14px",
-              background: bedtime ? "#f5c56c" : "hsl(var(--primary))",
-              color: bedtime ? "#1a1a2e" : "hsl(var(--primary-foreground))",
-              textShadow: "none",
-            }}
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Library
-          </Link>
-        </div>
-      </div>
-    </BookPage>
-  );
+  const bgFor = (url: string | null) =>
+    url
+      ? { backgroundImage: `url(${url})`, backgroundSize: "cover" as const, backgroundPosition: "center" as const, backgroundRepeat: "no-repeat" as const }
+      : { background: bedtime ? FALLBACK_GRADIENT_BEDTIME : FALLBACK_GRADIENT };
 
   return (
     <div
@@ -555,41 +381,21 @@ export default function StoryReader() {
     >
       {/* ── Minimal top bar overlay ── */}
       <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 pointer-events-none">
-        {/* Bedtime toggle */}
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleBedtime();
-          }}
+          onClick={(e) => { e.stopPropagation(); toggleBedtime(); }}
           className="pointer-events-auto p-2.5 rounded-full backdrop-blur-md transition-all duration-300"
           style={{
-            background: bedtime
-              ? "rgba(245, 197, 108, 0.15)"
-              : "rgba(255, 255, 255, 0.1)",
-            border: `1px solid ${
-              bedtime ? "rgba(245, 197, 108, 0.3)" : "rgba(255, 255, 255, 0.15)"
-            }`,
+            background: bedtime ? "rgba(245, 197, 108, 0.15)" : "rgba(255, 255, 255, 0.1)",
+            border: `1px solid ${bedtime ? "rgba(245, 197, 108, 0.3)" : "rgba(255, 255, 255, 0.15)"}`,
           }}
           aria-label="Toggle bedtime mode"
         >
-          {bedtime ? (
-            <Sun className="w-5 h-5" style={{ color: "#f5c56c" }} />
-          ) : (
-            <Moon className="w-5 h-5" style={{ color: "#ffffffcc" }} />
-          )}
+          {bedtime ? <Sun className="w-5 h-5" style={{ color: "#f5c56c" }} /> : <Moon className="w-5 h-5" style={{ color: "#ffffffcc" }} />}
         </button>
-
-        {/* Close */}
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate("/dashboard");
-          }}
+          onClick={(e) => { e.stopPropagation(); navigate("/dashboard"); }}
           className="pointer-events-auto p-2.5 rounded-full backdrop-blur-md transition-all"
-          style={{
-            background: "rgba(255, 255, 255, 0.1)",
-            border: "1px solid rgba(255, 255, 255, 0.15)",
-          }}
+          style={{ background: "rgba(255, 255, 255, 0.1)", border: "1px solid rgba(255, 255, 255, 0.15)" }}
           aria-label="Close story"
         >
           <X className="w-5 h-5" style={{ color: "#ffffffcc" }} />
@@ -605,21 +411,15 @@ export default function StoryReader() {
             : {
                 borderRadius: "8px",
                 border: "1px solid rgba(255,255,255,0.08)",
-                boxShadow:
-                  "0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)",
+                boxShadow: "0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05)",
                 overflow: "hidden",
               }
         }
       >
-        {/* Spine shadow on desktop */}
         {!isMobile && (
           <div
             className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 z-30 pointer-events-none"
-            style={{
-              width: "30px",
-              background:
-                "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.25) 40%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.25) 60%, transparent 100%)",
-            }}
+            style={{ width: "30px", background: "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.25) 40%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.25) 60%, transparent 100%)" }}
           />
         )}
 
@@ -652,11 +452,90 @@ export default function StoryReader() {
             clickEventForward={false}
             renderOnlyPageLengthChange={false}
           >
-            {bookPages.map((page, i) => (
-              <div key={i} className="w-full h-full">
-                {page}
+            {/* ── COVER ── */}
+            <BookPage bgImage={story.cover_image_url} bedtime={bedtime}>
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "50%", background: gradientBottom, pointerEvents: "none" }} />
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "24px", paddingBottom: "40px", zIndex: 10, textAlign: "center" }}>
+                <h1 style={{ ...storyFont, fontSize: isMobile ? "32px" : "42px", lineHeight: 1.2 }}>{story.title}</h1>
+                <p style={{ ...storyFont, fontSize: isMobile ? "16px" : "20px", opacity: 0.85, marginTop: "12px" }}>A story for {childName} ✨</p>
               </div>
-            ))}
+            </BookPage>
+
+            {/* ── STORY PAGES ── */}
+            {pages.map((page) => {
+              const isShort = page.text.length < 80;
+              const pos = isShort ? "top" : "bottom";
+              return (
+                <BookPage key={page.id} bgImage={page.illustration_url} bedtime={bedtime}>
+                  <div
+                    style={{
+                      position: "absolute",
+                      [pos]: 0,
+                      left: 0,
+                      right: 0,
+                      height: "50%",
+                      background: pos === "bottom" ? gradientBottom : gradientTop,
+                      pointerEvents: "none",
+                    }}
+                  />
+                  <div
+                    style={{
+                      position: "absolute",
+                      [pos]: 0,
+                      left: 0,
+                      right: 0,
+                      padding: "24px",
+                      ...(pos === "bottom" ? { paddingBottom: "40px" } : { paddingTop: "40px" }),
+                      zIndex: 10,
+                    }}
+                  >
+                    <p style={{ ...storyFont, fontSize: isMobile ? "20px" : "24px", lineHeight: 1.6, textAlign: "center" }}>
+                      {page.text}
+                    </p>
+                    <span
+                      style={{
+                        display: "block",
+                        textAlign: "center",
+                        marginTop: "8px",
+                        color: "rgba(255,255,255,0.5)",
+                        fontFamily: "'Bubblegum Sans', cursive",
+                        fontSize: "12px",
+                      }}
+                    >
+                      Page {page.page_number}
+                    </span>
+                  </div>
+                </BookPage>
+              );
+            })}
+
+            {/* ── END PAGE ── */}
+            <BookPage bgImage={pages[pages.length - 1]?.illustration_url ?? story.cover_image_url} bedtime={bedtime}>
+              <div style={{ position: "absolute", inset: 0, background: bedtime ? "rgba(13,13,26,0.75)" : "rgba(0,0,0,0.55)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "20px", padding: "24px" }}>
+                <span className="text-6xl animate-float">🌙</span>
+                <h2 style={{ ...storyFont, fontSize: isMobile ? "32px" : "42px" }}>The End</h2>
+                <p style={{ ...storyFont, fontSize: isMobile ? "16px" : "20px", opacity: 0.8 }}>Sweet dreams, {childName} ✨</p>
+                <StarRating storyId={story.id} initial={story.parent_rating} bedtime={bedtime} />
+                <div className="flex flex-col sm:flex-row gap-3 mt-2">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); flipBookRef.current?.pageFlip()?.flip(0); }}
+                    className="px-5 py-2.5 rounded-full font-semibold text-sm border transition-all hover:opacity-80 active:scale-95"
+                    style={{ ...storyFont, fontSize: "14px", borderColor: bedtime ? "#f5c56c44" : "#ffffff44", background: "transparent" }}
+                  >
+                    Read again
+                  </button>
+                  <Link
+                    to="/dashboard"
+                    onClick={(e) => e.stopPropagation()}
+                    className="px-5 py-2.5 rounded-full font-semibold text-sm transition-all hover:opacity-90 active:scale-95 inline-flex items-center gap-2"
+                    style={{ ...storyFont, fontSize: "14px", background: bedtime ? "#f5c56c" : "hsl(var(--primary))", color: bedtime ? "#1a1a2e" : "hsl(var(--primary-foreground))", textShadow: "none" }}
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to Library
+                  </Link>
+                </div>
+              </div>
+            </BookPage>
           </HTMLFlipBook>
         )}
       </div>
