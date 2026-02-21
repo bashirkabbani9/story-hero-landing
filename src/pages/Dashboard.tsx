@@ -151,45 +151,84 @@ function isNew(dateStr: string): boolean {
 function StoryCard({ story }: { story: Story }) {
   const navigate = useNavigate();
   const deliveryDate = story.delivered_at ?? story.created_at;
+  const [coverUrl, setCoverUrl] = useState<string | null>(story.cover_image_url);
+
+  // Fetch first page illustration as cover if no cover_image_url
+  useEffect(() => {
+    if (story.cover_image_url) return;
+    supabase
+      .from("story_pages")
+      .select("illustration_url")
+      .eq("story_id", story.id)
+      .eq("page_number", 1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.illustration_url) setCoverUrl(data.illustration_url);
+      });
+  }, [story.id, story.cover_image_url]);
 
   return (
     <button
       onClick={() => navigate(`/story/${story.id}`)}
-      className="group bg-card border border-border rounded-2xl overflow-hidden text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-purple focus:outline-none focus:ring-2 focus:ring-ring"
+      className="group relative rounded-2xl overflow-hidden text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-purple focus:outline-none focus:ring-2 focus:ring-ring"
     >
-      {/* Cover */}
-      <div className="relative aspect-[4/3] gradient-hero flex items-center justify-center">
-        {story.cover_image_url ? (
-          <img
-            src={story.cover_image_url}
-            alt={story.title}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="flex flex-col items-center gap-2 opacity-70">
+      {/* Cover image */}
+      <div
+        className="relative aspect-[3/4] w-full"
+        style={{
+          backgroundImage: coverUrl ? `url(${coverUrl})` : undefined,
+          background: coverUrl
+            ? undefined
+            : "linear-gradient(135deg, hsl(270, 38%, 20%) 0%, hsl(270, 45%, 35%) 50%, hsl(280, 40%, 45%) 100%)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        {/* Dark gradient overlay for text readability */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.15) 40%, transparent 60%)",
+          }}
+        />
+
+        {/* Fallback icon when no image */}
+        {!coverUrl && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-70">
             <Sparkles className="w-10 h-10 text-primary-foreground" />
-            <span className="text-primary-foreground text-xs font-medium">Illustration coming soon</span>
+            <span className="text-primary-foreground text-xs font-medium">
+              Illustration coming soon
+            </span>
           </div>
         )}
+
+        {/* New badge */}
         {isNew(deliveryDate) && (
-          <span className="absolute top-2 right-2 bg-accent text-accent-foreground text-xs font-bold px-2 py-0.5 rounded-full shadow">
+          <span className="absolute top-2 right-2 bg-accent text-accent-foreground text-xs font-bold px-2 py-0.5 rounded-full shadow z-10">
             New! ✨
           </span>
         )}
-      </div>
 
-      {/* Info */}
-      <div className="p-4">
-        <p className="font-display font-semibold text-foreground text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-          {story.title}
-        </p>
-        <p className="text-muted-foreground text-xs mt-1.5">
-          {new Date(deliveryDate).toLocaleDateString("en-GB", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          })}
-        </p>
+        {/* Title + date overlaid at bottom */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
+          <p
+            className="font-display font-semibold text-sm leading-snug line-clamp-2"
+            style={{ color: "#fff", textShadow: "1px 1px 4px rgba(0,0,0,0.6)" }}
+          >
+            {story.title}
+          </p>
+          <p
+            className="text-xs mt-1"
+            style={{ color: "rgba(255,255,255,0.7)", textShadow: "1px 1px 3px rgba(0,0,0,0.5)" }}
+          >
+            {new Date(deliveryDate).toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </p>
+        </div>
       </div>
     </button>
   );
