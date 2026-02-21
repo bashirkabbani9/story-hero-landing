@@ -139,19 +139,24 @@ const BookPage = forwardRef<HTMLDivElement, BookPageProps>(
         ref={ref}
         className={`relative overflow-hidden w-full h-full ${className}`}
         style={{
-          backgroundImage: bgImage
-            ? `url(${bgImage})`
-            : undefined,
-          background: bgImage
-            ? undefined
-            : bedtime
-            ? FALLBACK_GRADIENT_BEDTIME
-            : FALLBACK_GRADIENT,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
+          background: bedtime ? FALLBACK_GRADIENT_BEDTIME : FALLBACK_GRADIENT,
         }}
       >
+        {bgImage && (
+          <img
+            src={bgImage}
+            alt=""
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "center",
+            }}
+          />
+        )}
         {children}
       </div>
     );
@@ -234,7 +239,10 @@ export default function StoryReader() {
         return;
       }
       setStory(storyRes.data);
-      setPages(pagesRes.data ?? []);
+      const fetchedPages = pagesRes.data ?? [];
+      console.log('Fetched pages:', fetchedPages);
+      console.log('First page illustration_url:', fetchedPages?.[0]?.illustration_url);
+      setPages(fetchedPages);
       setLoading(false);
     });
   }, [id]);
