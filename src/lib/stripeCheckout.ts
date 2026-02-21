@@ -1,10 +1,4 @@
-import { loadStripe } from "@stripe/stripe-js";
-
-const STRIPE_PUBLISHABLE_KEY =
-  "pk_test_51T1ruhBf7Ygg5uvwJEUecbSbxQ0KWSBYBSoMsTGmoY4LGW62UiIJAX28a6uNnYWKjXoL7SogKZ9SUvKwpbMOtlo500ZLy7GXCE";
-const SUCCESS_URL =
-  "https://story-hero-landing-jet.vercel.app/dashboard?checkout=success";
-const CANCEL_URL = "https://story-hero-landing-jet.vercel.app/#pricing";
+const CHECKOUT_WEBHOOK = "https://bashk1.app.n8n.cloud/webhook/create-checkout";
 
 export const PENDING_PRICE_KEY = "pendingPriceId";
 
@@ -12,15 +6,23 @@ export async function redirectToStripeCheckout(
   priceId: string,
   customerEmail?: string
 ) {
-  const stripe = await loadStripe(STRIPE_PUBLISHABLE_KEY);
-  if (!stripe) throw new Error("Stripe failed to load");
+  const origin = window.location.origin;
 
-  // @ts-expect-error redirectToCheckout is available in legacy Stripe.js
-  await stripe.redirectToCheckout({
-    lineItems: [{ price: priceId, quantity: 1 }],
-    mode: "subscription",
-    successUrl: SUCCESS_URL,
-    cancelUrl: CANCEL_URL,
-    customerEmail: customerEmail ?? undefined,
+  const res = await fetch(CHECKOUT_WEBHOOK, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      priceId,
+      email: customerEmail ?? "",
+      successUrl: `${origin}/dashboard?checkout=success`,
+      cancelUrl: `${origin}/pricing`,
+    }),
   });
+
+  if (!res.ok) throw new Error("Failed to create checkout session");
+
+  const { url } = await res.json();
+  if (!url) throw new Error("No checkout URL returned");
+
+  window.location.href = url;
 }
