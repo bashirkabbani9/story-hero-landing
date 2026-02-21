@@ -134,21 +134,22 @@ interface BookPageProps {
 
 const BookPage = forwardRef<HTMLDivElement, BookPageProps>(
   ({ children, bgImage, bedtime, className = "" }, ref) => {
-    const bg = bgImage
-      ? `url(${bgImage})`
-      : bedtime
-      ? FALLBACK_GRADIENT_BEDTIME
-      : FALLBACK_GRADIENT;
-
     return (
       <div
         ref={ref}
-        className={`relative overflow-hidden ${className}`}
+        className={`relative overflow-hidden w-full h-full ${className}`}
         style={{
-          backgroundImage: bgImage ? bg : undefined,
-          background: bgImage ? undefined : bg,
+          backgroundImage: bgImage
+            ? `url(${bgImage})`
+            : undefined,
+          background: bgImage
+            ? undefined
+            : bedtime
+            ? FALLBACK_GRADIENT_BEDTIME
+            : FALLBACK_GRADIENT,
           backgroundSize: "cover",
           backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
         }}
       >
         {children}
