@@ -1,5 +1,4 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
 import Index from "./Index";
 import { Moon } from "lucide-react";
 
@@ -24,8 +23,6 @@ export default function SmartHome() {
       </div>
     );
   }
-
-  if (user) return <Navigate to="/dashboard" replace />;
 
   return <Index />;
 }

@@ -461,25 +461,19 @@ export default function Dashboard() {
               </div>
             </button>
 
-            {/* Manage Subscription */}
-            <button
-              onClick={() =>
-                toast({
-                  title: "Subscription management coming soon",
-                  description:
-                    "Email bashir@alkabbanisolutions.co.uk for any billing questions.",
-                })
-              }
-              className="flex items-center gap-3 bg-card border border-border rounded-2xl px-5 py-4 hover:border-primary hover:shadow-soft transition-all duration-200 group text-left w-full"
+            {/* Subscription / Pricing */}
+            <Link
+              to="/pricing"
+              className="flex items-center gap-3 bg-card border border-border rounded-2xl px-5 py-4 hover:border-primary hover:shadow-soft transition-all duration-200 group"
             >
               <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center flex-shrink-0 group-hover:gradient-purple transition-all duration-200">
                 <ExternalLink className="w-4 h-4 text-primary group-hover:text-primary-foreground" />
               </div>
               <div>
-                <p className="font-semibold text-foreground text-sm">Manage Subscription</p>
-                <p className="text-muted-foreground text-xs">Billing & plan details</p>
+                <p className="font-semibold text-foreground text-sm">Choose a Plan</p>
+                <p className="text-muted-foreground text-xs">View pricing & subscribe</p>
               </div>
-            </button>
+            </Link>
 
             {/* Add Another Child */}
             <Link
