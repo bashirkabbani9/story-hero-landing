@@ -29,6 +29,14 @@ export default function Navbar() {
               Sign In
             </Link>
           )}
+          {!loading && user && (
+            <Link
+              to="/dashboard"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:inline"
+            >
+              Go to Dashboard
+            </Link>
+          )}
           <a
             href="#get-story"
             className="px-4 py-2 gradient-purple text-primary-foreground text-sm font-medium rounded-full shadow-purple hover:opacity-90 transition-opacity"
