@@ -164,14 +164,25 @@ const BookPage = forwardRef<HTMLDivElement, BookPageProps>(
 );
 BookPage.displayName = "BookPage";
 
-// ─── Dynamic font size based on text length ─────────────────────────────────
+// ─── Age-adaptive font sizing ───────────────────────────────────────────────
 
-function getTextFontSize(text: string, isMobile: boolean): string {
+function getAgeFontSize(age: number | null, isMobile: boolean): { base: number; min: number } {
+  if (age !== null && age >= 3 && age <= 4) return { base: isMobile ? 28 : 34, min: 20 };
+  if (age !== null && age >= 5 && age <= 6) return { base: isMobile ? 24 : 30, min: 18 };
+  if (age !== null && age >= 7 && age <= 8) return { base: isMobile ? 20 : 26, min: 16 };
+  if (age !== null && age >= 9 && age <= 12) return { base: isMobile ? 18 : 22, min: 16 };
+  // Default (no age or outside range): use 22/26
+  return { base: isMobile ? 22 : 26, min: 16 };
+}
+
+function getTextFontSize(text: string, age: number | null, isMobile: boolean): string {
+  const { base, min } = getAgeFontSize(age, isMobile);
   const len = text.length;
-  if (len < 150) return isMobile ? "16px" : "16px";
-  if (len < 300) return isMobile ? "14px" : "14px";
-  if (len < 500) return isMobile ? "12px" : "12px";
-  return isMobile ? "11px" : "11px";
+  let size = base;
+  if (len > 200) size = Math.max(base - 4, min);
+  if (len > 350) size = Math.max(base - 8, min);
+  if (len > 500) size = Math.max(base - 12, min);
+  return `${size}px`;
 }
 
 // ─── Main component ─────────────────────────────────────────────────────────
@@ -190,6 +201,7 @@ export default function StoryReader() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [bookOpened, setBookOpened] = useState(false);
+  const [childAge, setChildAge] = useState<number | null>(null);
 
   const flipBookRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -234,7 +246,7 @@ export default function StoryReader() {
         .select("*")
         .eq("story_id", id)
         .order("page_number", { ascending: true }),
-    ]).then(([storyRes, pagesRes]) => {
+    ]).then(async ([storyRes, pagesRes]) => {
       if (storyRes.error) {
         setError("Could not load this story.");
         setLoading(false);
@@ -250,6 +262,17 @@ export default function StoryReader() {
       console.log('Fetched pages:', fetchedPages);
       console.log('First page illustration_url:', fetchedPages?.[0]?.illustration_url);
       setPages(fetchedPages);
+
+      // Fetch child age for adaptive font sizing
+      if (storyRes.data.child_id) {
+        const { data: childData } = await supabase
+          .from("children")
+          .select("age")
+          .eq("id", storyRes.data.child_id)
+          .maybeSingle();
+        if (childData?.age) setChildAge(childData.age);
+      }
+
       setLoading(false);
     });
   }, [id]);
@@ -618,7 +641,7 @@ export default function StoryReader() {
           >
             {/* ── STORY PAGES (no cover — cover is shown before flip book) ── */}
             {pages.map((page) => {
-              const fontSize = getTextFontSize(page.text, isMobile);
+              const fontSize = getTextFontSize(page.text, childAge, isMobile);
               return (
                 <BookPage key={page.id} bgImage={page.illustration_url} bedtime={bedtime}>
                   {/* Gradient overlay — bottom strip */}
@@ -628,7 +651,7 @@ export default function StoryReader() {
                       bottom: 0,
                       left: 0,
                       right: 0,
-                      height: "40%",
+                      height: "35%",
                       background: gradientBottom,
                       pointerEvents: "none",
                     }}
@@ -640,11 +663,15 @@ export default function StoryReader() {
                       bottom: 0,
                       left: 0,
                       right: 0,
-                      padding: "12px 16px 16px",
+                      maxHeight: "35%",
+                      padding: "16px 20px 16px",
                       zIndex: 10,
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "flex-end",
                     }}
                   >
-                    <p style={{ ...storyFont, fontSize, lineHeight: 1.5, textAlign: "center" }}>
+                    <p style={{ ...storyFont, fontSize, lineHeight: 1.6, textAlign: "center" }}>
                       {page.text}
                     </p>
                     <span
