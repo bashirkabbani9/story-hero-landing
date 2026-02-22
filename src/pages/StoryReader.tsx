@@ -345,6 +345,12 @@ export default function StoryReader() {
     color: textColor,
     textShadow,
   };
+  // Story page text (separate zone, not overlay)
+  const pageTextFont: React.CSSProperties = {
+    fontFamily: "'Quicksand', 'Nunito', sans-serif",
+    fontWeight: 500,
+    color: bedtime ? "#e8dcc8" : "#3D2E1F",
+  };
 
   const onFlip = useCallback((e: any) => {
     setCurrentPage(e.data);
@@ -389,10 +395,10 @@ export default function StoryReader() {
     );
   }
 
-  // ── Text/gradient helpers ──
-  const gradientBottom = bedtime
-    ? "linear-gradient(to top, rgba(13,13,26,0.85), transparent)"
-    : "linear-gradient(to top, rgba(0,0,0,0.7), transparent)";
+  // ── Gradient for cover only ──
+  const coverGradient = "linear-gradient(to top, rgba(0,0,0,0.7), transparent)";
+  const textAreaBg = bedtime ? "#1a1a2e" : "#FEFCF7";
+  const pageNumColor = bedtime ? "rgba(232,220,200,0.4)" : "rgba(61,46,31,0.35)";
 
   const coverImageUrl = pages[0]?.illustration_url ?? story.cover_image_url;
 
@@ -639,49 +645,63 @@ export default function StoryReader() {
             clickEventForward={false}
             renderOnlyPageLengthChange={false}
           >
-            {/* ── STORY PAGES (no cover — cover is shown before flip book) ── */}
+            {/* ── STORY PAGES — split layout: illustration top, text bottom ── */}
             {pages.map((page) => {
               const fontSize = getTextFontSize(page.text, childAge, isMobile);
               return (
-                <BookPage key={page.id} bgImage={page.illustration_url} bedtime={bedtime}>
-                  {/* Gradient overlay — bottom strip */}
+                <BookPage key={page.id} bgImage={null} bedtime={bedtime}>
+                  {/* Illustration area — top 58% */}
                   <div
                     style={{
                       position: "absolute",
-                      bottom: 0,
+                      top: 0,
                       left: 0,
                       right: 0,
-                      height: "35%",
-                      background: gradientBottom,
-                      pointerEvents: "none",
-                    }}
-                  />
-                  {/* Text caption at bottom */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      maxHeight: "35%",
-                      padding: "16px 20px 16px",
-                      zIndex: 10,
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "flex-end",
+                      height: "58%",
+                      overflow: "hidden",
+                      background: bedtime ? "#1a1a2e" : "#F5F0E8",
                     }}
                   >
-                    <p style={{ ...storyFont, fontSize, lineHeight: 1.6, textAlign: "center" }}>
+                    {page.illustration_url && (
+                      <img
+                        src={page.illustration_url}
+                        alt=""
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          objectPosition: "center top",
+                        }}
+                      />
+                    )}
+                  </div>
+                  {/* Text area — bottom 42% */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: "42%",
+                      background: textAreaBg,
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      padding: "20px 24px 16px",
+                    }}
+                  >
+                    <p style={{ ...pageTextFont, fontSize, lineHeight: 1.7, textAlign: "left" }}>
                       {page.text}
                     </p>
                     <span
                       style={{
                         display: "block",
                         textAlign: "center",
-                        marginTop: "4px",
-                        color: "rgba(255,255,255,0.4)",
-                        fontFamily: "'Bubblegum Sans', cursive",
+                        color: pageNumColor,
+                        fontFamily: "'Quicksand', sans-serif",
                         fontSize: "11px",
+                        fontWeight: 600,
+                        marginTop: "8px",
                       }}
                     >
                       {page.page_number}
