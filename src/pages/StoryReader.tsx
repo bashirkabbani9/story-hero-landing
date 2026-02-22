@@ -152,7 +152,7 @@ const BookPage = forwardRef<HTMLDivElement, BookPageProps>(
               left: 0,
               width: "100%",
               height: "100%",
-              objectFit: "contain",
+              objectFit: "cover",
               objectPosition: "center top",
             }}
           />
@@ -167,12 +167,11 @@ BookPage.displayName = "BookPage";
 // ─── Age-adaptive font sizing ───────────────────────────────────────────────
 
 function getAgeFontSize(age: number | null, isMobile: boolean): { base: number; min: number } {
-  if (age !== null && age >= 3 && age <= 4) return { base: isMobile ? 28 : 34, min: 20 };
-  if (age !== null && age >= 5 && age <= 6) return { base: isMobile ? 24 : 30, min: 18 };
-  if (age !== null && age >= 7 && age <= 8) return { base: isMobile ? 20 : 26, min: 16 };
-  if (age !== null && age >= 9 && age <= 12) return { base: isMobile ? 18 : 22, min: 16 };
-  // Default (no age or outside range): use 22/26
-  return { base: isMobile ? 22 : 26, min: 16 };
+  if (age !== null && age >= 3 && age <= 4) return { base: isMobile ? 20 : 24, min: 12 };
+  if (age !== null && age >= 5 && age <= 6) return { base: isMobile ? 18 : 22, min: 12 };
+  if (age !== null && age >= 7 && age <= 8) return { base: isMobile ? 16 : 20, min: 12 };
+  if (age !== null && age >= 9 && age <= 12) return { base: isMobile ? 14 : 18, min: 12 };
+  return { base: isMobile ? 18 : 22, min: 12 };
 }
 
 function getTextFontSize(text: string, age: number | null, isMobile: boolean): string {
@@ -645,12 +644,65 @@ export default function StoryReader() {
             clickEventForward={false}
             renderOnlyPageLengthChange={false}
           >
-            {/* ── STORY PAGES — split layout: illustration top, text bottom ── */}
+            {/* ── STORY PAGES ── */}
             {pages.map((page) => {
               const fontSize = getTextFontSize(page.text, childAge, isMobile);
+              const isCover = page.page_number === 0;
+
+              if (isCover) {
+                // Cover page: full-bleed illustration with title overlay
+                return (
+                  <BookPage key={page.id} bgImage={page.illustration_url} bedtime={bedtime}>
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: "45%",
+                        background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)",
+                        pointerEvents: "none",
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        padding: "24px",
+                        zIndex: 10,
+                        textAlign: "center",
+                      }}
+                    >
+                      <h2
+                        style={{
+                          ...storyFont,
+                          fontSize: isMobile ? "24px" : "32px",
+                          fontWeight: 700,
+                          lineHeight: 1.2,
+                        }}
+                      >
+                        {story.title}
+                      </h2>
+                      <p
+                        style={{
+                          ...storyFont,
+                          fontSize: isMobile ? "13px" : "16px",
+                          opacity: 0.85,
+                          marginTop: "8px",
+                        }}
+                      >
+                        A story for {childName} ✨
+                      </p>
+                    </div>
+                  </BookPage>
+                );
+              }
+
+              // Story pages: split layout
               return (
                 <BookPage key={page.id} bgImage={null} bedtime={bedtime}>
-                  {/* Illustration area — top 58% */}
                   <div
                     style={{
                       position: "absolute",
@@ -675,7 +727,6 @@ export default function StoryReader() {
                       />
                     )}
                   </div>
-                  {/* Text area — bottom 42% */}
                   <div
                     style={{
                       position: "absolute",
@@ -688,6 +739,7 @@ export default function StoryReader() {
                       flexDirection: "column",
                       justifyContent: "space-between",
                       padding: "20px 24px 16px",
+                      overflowY: "auto",
                     }}
                   >
                     <p style={{ ...pageTextFont, fontSize, lineHeight: 1.7, textAlign: "left" }}>
@@ -702,6 +754,7 @@ export default function StoryReader() {
                         fontSize: "11px",
                         fontWeight: 600,
                         marginTop: "8px",
+                        flexShrink: 0,
                       }}
                     >
                       {page.page_number}
