@@ -600,6 +600,28 @@ export default function StoryReader() {
         </button>
       </div>
 
+      {/* ── Mobile nav arrows ── */}
+      {isMobile && (
+        <>
+          <button
+            onClick={(e) => { e.stopPropagation(); goBack(); }}
+            className="fixed left-3 top-1/2 -translate-y-1/2 z-50 w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-opacity active:scale-90"
+            style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)" }}
+            aria-label="Previous page"
+          >
+            <ArrowLeft className="w-5 h-5" style={{ color: "#ffffffcc" }} />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); goForward(); }}
+            className="fixed right-3 top-1/2 -translate-y-1/2 z-50 w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-opacity active:scale-90"
+            style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)" }}
+            aria-label="Next page"
+          >
+            <ArrowLeft className="w-5 h-5 rotate-180" style={{ color: "#ffffffcc" }} />
+          </button>
+        </>
+      )}
+
       {/* ── Book container ── */}
       <div
         className={`relative ${isMobile ? "" : "rounded-lg"}`}
