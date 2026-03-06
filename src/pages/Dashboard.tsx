@@ -589,6 +589,36 @@ export default function Dashboard() {
         {/* SECTION 3 — QUICK ACTIONS */}
         <section className="animate-fade-up" style={{ animationDelay: "0.15s" }}>
           <h2 className="font-display text-xl font-bold text-foreground mb-4">Quick Actions</h2>
+
+          {/* On-demand story card */}
+          {child && (
+            <button
+              onClick={handleBuyStory}
+              disabled={buyingStory}
+              className="w-full mb-4 rounded-2xl p-5 text-left transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed"
+              style={{
+                background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(38, 90%, 55%) 100%)",
+                boxShadow: "0 8px 30px hsla(var(--primary), 0.3)",
+              }}
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,255,255,0.2)" }}>
+                  <Wand2 className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-display font-bold text-primary-foreground text-base">Get a Story Now ✨</p>
+                  <p className="text-primary-foreground/80 text-sm">Can't wait until Sunday? Get a new story instantly for £2.99</p>
+                </div>
+                <div className="flex-shrink-0">
+                  <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm" style={{ background: "rgba(255,255,255,0.25)", color: "white" }}>
+                    {buyingStory && <Loader2 className="w-4 h-4 animate-spin" />}
+                    Buy Now
+                  </span>
+                </div>
+              </div>
+            </button>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {/* Refer a friend */}
             <button
