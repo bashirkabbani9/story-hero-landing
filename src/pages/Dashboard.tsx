@@ -170,72 +170,91 @@ function StoryCard({ story, childName }: { story: Story; childName?: string }) {
   return (
     <button
       onClick={() => navigate(`/story/${story.id}`)}
-      className="group relative rounded-2xl overflow-hidden text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-purple focus:outline-none focus:ring-2 focus:ring-ring"
+      className="group relative overflow-hidden text-left focus:outline-none focus:ring-2 focus:ring-ring"
+      style={{
+        maxWidth: "200px",
+        width: "100%",
+        aspectRatio: "2/3",
+        borderRadius: "2px 8px 8px 2px",
+        boxShadow: "4px 4px 12px rgba(0,0,0,0.15), 1px 1px 4px rgba(0,0,0,0.1)",
+        transition: "transform 0.3s ease, box-shadow 0.3s ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = "translateY(-4px)";
+        e.currentTarget.style.boxShadow = "6px 8px 20px rgba(0,0,0,0.22), 2px 2px 6px rgba(0,0,0,0.12)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.boxShadow = "4px 4px 12px rgba(0,0,0,0.15), 1px 1px 4px rgba(0,0,0,0.1)";
+      }}
     >
-      {/* Cover image */}
-      <div
-        className="relative aspect-[3/4] w-full"
-        style={{
-          background: coverUrl
-            ? undefined
-            : "linear-gradient(135deg, hsl(270, 38%, 20%) 0%, hsl(270, 45%, 35%) 50%, hsl(280, 40%, 45%) 100%)",
-        }}
-      >
-        {coverUrl && (
-          <img
-            src={coverUrl}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{ objectPosition: "center top" }}
-          />
-        )}
-        {/* Dark overlay for readability */}
+      {/* Cover image fills entire card */}
+      {coverUrl ? (
+        <img
+          src={coverUrl}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ objectPosition: "center top" }}
+        />
+      ) : (
         <div
           className="absolute inset-0"
           style={{
-            background: "rgba(0,0,0,0.3)",
+            background: "linear-gradient(135deg, hsl(270, 38%, 20%) 0%, hsl(270, 45%, 35%) 50%, hsl(280, 40%, 45%) 100%)",
           }}
         />
-        {/* Book spine shadow on left edge */}
-        <div
-          className="absolute top-0 left-0 bottom-0 w-3"
-          style={{ background: "linear-gradient(to right, rgba(0,0,0,0.4), transparent)" }}
-        />
+      )}
 
-        {/* Fallback icon when no image */}
-        {!coverUrl && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-70">
-            <Sparkles className="w-10 h-10 text-primary-foreground" />
-            <span className="text-primary-foreground text-xs font-medium">
-              Illustration coming soon
-            </span>
-          </div>
-        )}
+      {/* Book spine effect on left edge */}
+      <div
+        className="absolute top-0 left-0 bottom-0"
+        style={{
+          width: "6px",
+          background: "linear-gradient(to right, rgba(0,0,0,0.5), rgba(0,0,0,0.15))",
+          boxShadow: "inset -1px 0 3px rgba(0,0,0,0.2)",
+          zIndex: 15,
+        }}
+      />
 
-        {/* New badge */}
-        {isNew(deliveryDate) && (
-          <span className="absolute top-2 right-2 bg-accent text-accent-foreground text-xs font-bold px-2 py-0.5 rounded-full shadow z-10">
-            New! ✨
+      {/* Fallback icon when no image */}
+      {!coverUrl && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-70 z-10">
+          <Sparkles className="w-10 h-10 text-primary-foreground" />
+          <span className="text-primary-foreground text-xs font-medium">
+            Illustration coming soon
           </span>
-        )}
-
-        {/* Title centred like a book cover */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-4 z-10 text-center">
-          <p
-            className="font-semibold text-sm leading-snug line-clamp-3"
-            style={{ color: "#fff", textShadow: "2px 2px 8px rgba(0,0,0,0.7)", fontFamily: "'Bubblegum Sans', cursive" }}
-          >
-            {story.title}
-          </p>
-          {childName && (
-            <p
-              className="text-xs mt-1.5"
-              style={{ color: "rgba(255,255,255,0.75)", textShadow: "1px 1px 4px rgba(0,0,0,0.6)", fontFamily: "'Bubblegum Sans', cursive" }}
-            >
-              A story for {childName}
-            </p>
-          )}
         </div>
+      )}
+
+      {/* New badge */}
+      {isNew(deliveryDate) && (
+        <span className="absolute top-2 right-2 bg-accent text-accent-foreground text-xs font-bold px-2 py-0.5 rounded-full shadow z-20">
+          New! ✨
+        </span>
+      )}
+
+      {/* Bottom gradient + title overlay */}
+      <div
+        className="absolute bottom-0 left-0 right-0 z-10"
+        style={{
+          background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.3) 60%, transparent 100%)",
+          padding: "32px 10px 10px",
+        }}
+      >
+        <p
+          className="font-semibold text-sm leading-snug line-clamp-3"
+          style={{ color: "#fff", textShadow: "2px 2px 8px rgba(0,0,0,0.7)", fontFamily: "'Bubblegum Sans', cursive" }}
+        >
+          {story.title}
+        </p>
+        {childName && (
+          <p
+            className="text-xs mt-1"
+            style={{ color: "rgba(255,255,255,0.75)", textShadow: "1px 1px 4px rgba(0,0,0,0.6)", fontFamily: "'Bubblegum Sans', cursive" }}
+          >
+            A story for {childName}
+          </p>
+        )}
       </div>
     </button>
   );
@@ -479,7 +498,7 @@ export default function Dashboard() {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 justify-items-center">
               {stories.length === 0 ? (
                 <EmptyStories />
               ) : (
