@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback, forwardRef } from "react";
+import { useEffect, useLayoutEffect, useState, useRef, useCallback, forwardRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -122,6 +122,76 @@ const FALLBACK_GRADIENT =
 
 const FALLBACK_GRADIENT_BEDTIME =
   "radial-gradient(ellipse at 30% 20%, #1a1a4e 0%, #2d2060 40%, #0d0d2a 100%)";
+
+// ─── Auto-fit text component ────────────────────────────────────────────────
+
+function AutoFitText({
+  text,
+  pageNumber,
+  initialFontSize,
+  pageTextFont,
+  pageNumColor,
+  textAreaBg,
+}: {
+  text: string;
+  pageNumber: number;
+  initialFontSize: number;
+  pageTextFont: React.CSSProperties;
+  pageNumColor: string;
+  textAreaBg: string;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [fontSize, setFontSize] = useState(initialFontSize);
+
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    let size = initialFontSize;
+    el.style.fontSize = size + "px";
+    while (el.scrollHeight > el.clientHeight && size > 12) {
+      size -= 1;
+      el.style.fontSize = size + "px";
+    }
+    setFontSize(size);
+  }, [text, initialFontSize]);
+
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: "42%",
+        background: textAreaBg,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        padding: "20px 24px 16px",
+        overflow: "hidden",
+      }}
+    >
+      <p style={{ ...pageTextFont, fontSize: fontSize + "px", lineHeight: 1.7, textAlign: "left" }}>
+        {text}
+      </p>
+      <span
+        style={{
+          display: "block",
+          textAlign: "center",
+          color: pageNumColor,
+          fontFamily: "'Quicksand', sans-serif",
+          fontSize: "11px",
+          fontWeight: 600,
+          marginTop: "8px",
+          flexShrink: 0,
+        }}
+      >
+        {pageNumber}
+      </span>
+    </div>
+  );
+}
 
 // ─── Book page component (must use forwardRef for react-pageflip) ───────────
 
@@ -702,39 +772,14 @@ export default function StoryReader() {
                       />
                     )}
                   </div>
-                  <div
-                    style={{
-                      position: "absolute",
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      height: "42%",
-                      background: textAreaBg,
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                      padding: "20px 24px 16px",
-                      overflowY: "auto",
-                    }}
-                  >
-                    <p style={{ ...pageTextFont, fontSize, lineHeight: 1.7, textAlign: "left" }}>
-                      {page.text}
-                    </p>
-                    <span
-                      style={{
-                        display: "block",
-                        textAlign: "center",
-                        color: pageNumColor,
-                        fontFamily: "'Quicksand', sans-serif",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        marginTop: "8px",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {page.page_number}
-                    </span>
-                  </div>
+                  <AutoFitText
+                    text={page.text}
+                    pageNumber={page.page_number}
+                    initialFontSize={parseInt(fontSize)}
+                    pageTextFont={pageTextFont}
+                    pageNumColor={pageNumColor}
+                    textAreaBg={textAreaBg}
+                  />
                 </BookPage>
               );
             })}
