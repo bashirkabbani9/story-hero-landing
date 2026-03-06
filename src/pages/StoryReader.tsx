@@ -344,9 +344,14 @@ export default function StoryReader() {
     color: textColor,
     textShadow,
   };
+  // Age-adaptive font family for story text
+  const storyFontFamily =
+    childAge !== null && childAge >= 8 && childAge <= 12
+      ? "'Georgia', 'Baskerville Old Face', 'Garamond', serif"
+      : "'Andika', 'Century Gothic', 'Avenir', sans-serif";
   // Story page text (separate zone, not overlay)
   const pageTextFont: React.CSSProperties = {
-    fontFamily: "'Quicksand', 'Nunito', sans-serif",
+    fontFamily: storyFontFamily,
     fontWeight: 500,
     color: bedtime ? "#e8dcc8" : "#3D2E1F",
   };
@@ -646,7 +651,7 @@ export default function StoryReader() {
             renderOnlyPageLengthChange={false}
           >
             {/* ── STORY PAGES ── */}
-            {pages.map((page) => {
+            {pages.filter(p => p.page_number > 0).map((page) => {
               const fontSize = getTextFontSize(page.text, childAge, isMobile);
               // All flip book pages use split layout
               return (
