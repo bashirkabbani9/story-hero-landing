@@ -299,11 +299,7 @@ export default function Dashboard() {
   const countdown = useCountdown(nextSunday);
   const streak = calculateStreak(stories);
 
-  // On-demand story purchase state
   const [buyingStory, setBuyingStory] = useState(false);
-  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const prevStoryCountRef = useRef<number>(stories.length);
 
   // Show success toast after Stripe checkout
   useEffect(() => {
@@ -316,20 +312,17 @@ export default function Dashboard() {
     }
   }, [searchParams, setSearchParams]);
 
-  // Show purchase success toast and start polling
+  // Show purchase success toast and auto-refresh after 2 minutes
   useEffect(() => {
     if (searchParams.get("purchase") === "success") {
       toast({
         title: "Your new story is being created! ✨",
-        description: "It'll appear in your library in a few minutes.",
+        description: "It'll appear in your library shortly.",
       });
       setSearchParams({}, { replace: true });
 
-      // Store current count to detect new story
-      prevStoryCountRef.current = stories.length;
-
-      // Poll every 30s for 5 minutes
-      pollTimerRef.current = setInterval(async () => {
+      // Auto-refresh story list after 2 minutes
+      const timeout = setTimeout(async () => {
         if (!child) return;
         const { data } = await supabase
           .from("stories")
@@ -337,27 +330,19 @@ export default function Dashboard() {
           .eq("child_id", child.id)
           .eq("status", "ready")
           .order("created_at", { ascending: false });
-        if (data && data.length > prevStoryCountRef.current) {
+        if (data) {
           setStories(data);
-          // Stop polling
-          if (pollTimerRef.current) clearInterval(pollTimerRef.current);
-          if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
-          toast({
-            title: "Your new story is ready! 🎉📖",
-            description: "Tap it to start reading!",
-          });
+          if (data.length > stories.length) {
+            toast({
+              title: "Your new story is ready! 🎉📖",
+              description: "Tap it to start reading!",
+            });
+          }
         }
-      }, 30000);
+      }, 2 * 60 * 1000);
 
-      pollTimeoutRef.current = setTimeout(() => {
-        if (pollTimerRef.current) clearInterval(pollTimerRef.current);
-      }, 5 * 60 * 1000);
+      return () => clearTimeout(timeout);
     }
-
-    return () => {
-      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
-      if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
-    };
   }, [searchParams]);
 
   const handleBuyStory = async () => {
@@ -607,7 +592,7 @@ export default function Dashboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-display font-bold text-primary-foreground text-base">Get a Story Now ✨</p>
-                  <p className="text-primary-foreground/80 text-sm">Can't wait until Sunday? Get a new story instantly for £2.99</p>
+                  <p className="text-primary-foreground/80 text-sm">Can't wait until Sunday? Get a new story instantly for £1.49</p>
                 </div>
                 <div className="flex-shrink-0">
                   <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm" style={{ background: "rgba(255,255,255,0.25)", color: "white" }}>
