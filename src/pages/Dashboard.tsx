@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -12,6 +12,8 @@ import {
   Copy,
   BookOpen,
   Sparkles,
+  Wand2,
+  Loader2,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -297,6 +299,12 @@ export default function Dashboard() {
   const countdown = useCountdown(nextSunday);
   const streak = calculateStreak(stories);
 
+  // On-demand story purchase state
+  const [buyingStory, setBuyingStory] = useState(false);
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevStoryCountRef = useRef<number>(stories.length);
+
   // Show success toast after Stripe checkout
   useEffect(() => {
     if (searchParams.get("checkout") === "success") {
@@ -304,10 +312,80 @@ export default function Dashboard() {
         title: "Welcome to Little Hero Library! 🎉",
         description: "Your first story is being created — check back soon! ✨",
       });
-      // Remove the query param without a page reload
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, setSearchParams]);
+
+  // Show purchase success toast and start polling
+  useEffect(() => {
+    if (searchParams.get("purchase") === "success") {
+      toast({
+        title: "Your new story is being created! ✨",
+        description: "It'll appear in your library in a few minutes.",
+      });
+      setSearchParams({}, { replace: true });
+
+      // Store current count to detect new story
+      prevStoryCountRef.current = stories.length;
+
+      // Poll every 30s for 5 minutes
+      pollTimerRef.current = setInterval(async () => {
+        if (!child) return;
+        const { data } = await supabase
+          .from("stories")
+          .select("*")
+          .eq("child_id", child.id)
+          .eq("status", "ready")
+          .order("created_at", { ascending: false });
+        if (data && data.length > prevStoryCountRef.current) {
+          setStories(data);
+          // Stop polling
+          if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+          if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+          toast({
+            title: "Your new story is ready! 🎉📖",
+            description: "Tap it to start reading!",
+          });
+        }
+      }, 30000);
+
+      pollTimeoutRef.current = setTimeout(() => {
+        if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+      }, 5 * 60 * 1000);
+    }
+
+    return () => {
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+      if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+    };
+  }, [searchParams]);
+
+  const handleBuyStory = async () => {
+    if (!child) return;
+    setBuyingStory(true);
+    try {
+      const origin = window.location.origin;
+      const res = await fetch("https://bashk1.app.n8n.cloud/webhook/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          priceId: "price_on_demand_single_story",
+          email: user?.email ?? "",
+          successUrl: `${origin}/dashboard?purchase=success`,
+          cancelUrl: `${origin}/dashboard`,
+          metadata: { child_id: child.id, is_on_demand: "true" },
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to create checkout");
+      const { url } = await res.json();
+      if (url) window.location.href = url;
+    } catch (err) {
+      console.error("On-demand purchase error:", err);
+      toast({ title: "Something went wrong", description: "Please try again." });
+    } finally {
+      setBuyingStory(false);
+    }
+  };
 
 
   // Fetch parent name from profiles

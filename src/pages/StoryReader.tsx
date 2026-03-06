@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback, forwardRef } from "react";
+import { useEffect, useLayoutEffect, useState, useRef, useCallback, forwardRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -702,39 +702,14 @@ export default function StoryReader() {
                       />
                     )}
                   </div>
-                  <div
-                    style={{
-                      position: "absolute",
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      height: "42%",
-                      background: textAreaBg,
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                      padding: "20px 24px 16px",
-                      overflowY: "auto",
-                    }}
-                  >
-                    <p style={{ ...pageTextFont, fontSize, lineHeight: 1.7, textAlign: "left" }}>
-                      {page.text}
-                    </p>
-                    <span
-                      style={{
-                        display: "block",
-                        textAlign: "center",
-                        color: pageNumColor,
-                        fontFamily: "'Quicksand', sans-serif",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        marginTop: "8px",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {page.page_number}
-                    </span>
-                  </div>
+                  <AutoFitText
+                    text={page.text}
+                    pageNumber={page.page_number}
+                    initialFontSize={parseInt(fontSize)}
+                    pageTextFont={pageTextFont}
+                    pageNumColor={pageNumColor}
+                    textAreaBg={textAreaBg}
+                  />
                 </BookPage>
               );
             })}
