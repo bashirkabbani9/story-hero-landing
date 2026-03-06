@@ -22,20 +22,37 @@ export default function Navbar() {
             Pricing
           </a>
           {!loading && !user && (
-            <Link
-              to="/login"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:inline"
-            >
-              Sign In
-            </Link>
+            <>
+              <Link
+                to="/login"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:inline"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/login"
+                className="sm:hidden text-sm px-3 py-1.5 rounded-full border border-primary text-primary font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
+              >
+                Log In
+              </Link>
+            </>
           )}
           {!loading && user && (
-            <Link
-              to="/dashboard"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:inline"
-            >
-              Go to Dashboard
-            </Link>
+            <>
+              <Link
+                to="/dashboard"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:inline"
+              >
+                Go to Dashboard
+              </Link>
+              <Link
+                to="/dashboard"
+                className="sm:hidden w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold"
+                aria-label="Dashboard"
+              >
+                {user.email?.charAt(0).toUpperCase() ?? "U"}
+              </Link>
+            </>
           )}
           <a
             href="#get-story"
