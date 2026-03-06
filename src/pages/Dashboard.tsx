@@ -354,7 +354,7 @@ export default function Dashboard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          priceId: "price_on_demand_single_story",
+          priceId: "price_1T82KNBf7Ygg5uvwKcikpaw0",
           email: user?.email ?? "",
           successUrl: `${origin}/dashboard?purchase=success`,
           cancelUrl: `${origin}/dashboard`,
