@@ -19,6 +19,8 @@ const INTERESTS = [
   { label: "Dinosaurs", emoji: "🦕" },
   { label: "Fairies", emoji: "🧚" },
   { label: "Pirates", emoji: "🏴‍☠️" },
+  { label: "Superheroes", emoji: "🦸" },
+  { label: "Ocean", emoji: "🌊" },
 ];
 
 const LANGUAGES = [
@@ -105,8 +107,8 @@ export default function Onboarding() {
 
     // Wait for the animation to play before redirecting
     setTimeout(() => {
-      navigate("/dashboard", { replace: true });
-    }, 3000);
+      navigate("/pricing", { replace: true });
+    }, 2000);
   };
 
   const canProceed = () => {
