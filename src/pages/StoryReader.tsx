@@ -648,60 +648,7 @@ export default function StoryReader() {
             {/* ── STORY PAGES ── */}
             {pages.map((page) => {
               const fontSize = getTextFontSize(page.text, childAge, isMobile);
-              const isCover = page.page_number === 0;
-
-              if (isCover) {
-                // Cover page: full-bleed illustration with title overlay
-                return (
-                  <BookPage key={page.id} bgImage={page.illustration_url} bedtime={bedtime}>
-                    <div
-                      style={{
-                        position: "absolute",
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        height: "45%",
-                        background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)",
-                        pointerEvents: "none",
-                      }}
-                    />
-                    <div
-                      style={{
-                        position: "absolute",
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        padding: "24px",
-                        zIndex: 10,
-                        textAlign: "center",
-                      }}
-                    >
-                      <h2
-                        style={{
-                          ...storyFont,
-                          fontSize: isMobile ? "24px" : "32px",
-                          fontWeight: 700,
-                          lineHeight: 1.2,
-                        }}
-                      >
-                        {story.title}
-                      </h2>
-                      <p
-                        style={{
-                          ...storyFont,
-                          fontSize: isMobile ? "13px" : "16px",
-                          opacity: 0.85,
-                          marginTop: "8px",
-                        }}
-                      >
-                        A story for {childName} ✨
-                      </p>
-                    </div>
-                  </BookPage>
-                );
-              }
-
-              // Story pages: split layout
+              // All flip book pages use split layout
               return (
                 <BookPage key={page.id} bgImage={null} bedtime={bedtime}>
                   <div
