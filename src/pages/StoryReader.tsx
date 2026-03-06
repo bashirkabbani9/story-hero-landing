@@ -437,7 +437,7 @@ export default function StoryReader() {
         {/* Closed book */}
         <button
           onClick={() => setBookOpened(true)}
-          className="relative overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
+          className="relative cursor-pointer transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
           style={{
             aspectRatio: "3/4",
             maxHeight: "80vh",
@@ -445,9 +445,10 @@ export default function StoryReader() {
             width: isMobile ? "75vw" : "35vw",
             borderRadius: "4px 12px 12px 4px",
             boxShadow: "8px 8px 30px rgba(0,0,0,0.6), -2px 0 8px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05)",
+            overflow: "hidden",
           }}
         >
-          {/* Cover illustration */}
+          {/* Cover illustration — edge to edge */}
           {coverImageUrl ? (
             <img
               src={coverImageUrl}
@@ -459,7 +460,7 @@ export default function StoryReader() {
                 width: "100%",
                 height: "100%",
                 objectFit: "cover",
-                objectPosition: "center top",
+                objectPosition: "center",
               }}
             />
           ) : (
@@ -472,18 +473,18 @@ export default function StoryReader() {
             />
           )}
 
-          {/* Dark overlay */}
-          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)" }} />
+          {/* Subtle dark overlay for text readability */}
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.3)" }} />
 
-          {/* Spine shadow on left edge */}
+          {/* Spine effect on left edge */}
           <div
             style={{
               position: "absolute",
               top: 0,
               left: 0,
               bottom: 0,
-              width: "20px",
-              background: "linear-gradient(to right, rgba(0,0,0,0.6), rgba(0,0,0,0.2), transparent)",
+              width: "12px",
+              background: "linear-gradient(to right, rgba(0,0,0,0.5), rgba(0,0,0,0.15), transparent)",
               pointerEvents: "none",
             }}
           />
@@ -497,7 +498,7 @@ export default function StoryReader() {
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              padding: "32px",
+              padding: "24px",
               zIndex: 10,
               textAlign: "center",
             }}
