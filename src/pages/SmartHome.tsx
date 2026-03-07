@@ -1,15 +1,10 @@
 import { useAuth } from "@/contexts/AuthContext";
+import { Navigate } from "react-router-dom";
 import Index from "./Index";
 import { Moon } from "lucide-react";
 
-/**
- * Smart home route:
- * - If loading → show spinner
- * - If logged in → redirect to /dashboard
- * - If logged out → show landing page
- */
 export default function SmartHome() {
-  const { user, loading } = useAuth();
+  const { user, loading, hasChildren } = useAuth();
 
   if (loading) {
     return (
@@ -22,6 +17,10 @@ export default function SmartHome() {
         </div>
       </div>
     );
+  }
+
+  if (user) {
+    return <Navigate to={hasChildren ? "/dashboard" : "/onboarding"} replace />;
   }
 
   return <Index />;

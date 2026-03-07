@@ -1,10 +1,11 @@
 import { ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Moon } from "lucide-react";
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, hasChildren } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -20,5 +21,11 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
+
+  // If user has no child profiles and isn't already on onboarding, redirect there
+  if (!hasChildren && location.pathname !== "/onboarding") {
+    return <Navigate to="/onboarding" replace />;
+  }
+
   return <>{children}</>;
 }

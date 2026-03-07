@@ -394,7 +394,10 @@ export default function Dashboard() {
 
   // Fetch stories
   useEffect(() => {
-    if (!child) return;
+    if (!child) {
+      setLoadingStories(false);
+      return;
+    }
     setLoadingStories(true);
     supabase
       .from("stories")
