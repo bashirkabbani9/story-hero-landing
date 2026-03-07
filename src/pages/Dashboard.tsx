@@ -356,9 +356,10 @@ export default function Dashboard() {
         body: JSON.stringify({
           priceId: "price_1T82KNBf7Ygg5uvwKcikpaw0",
           email: user?.email ?? "",
+          profileId: user?.id ?? "",
+          childId: child.id,
           successUrl: `${origin}/dashboard?purchase=success`,
           cancelUrl: `${origin}/dashboard`,
-          metadata: { child_id: child.id, is_on_demand: "true" },
         }),
       });
       if (!res.ok) throw new Error("Failed to create checkout");

@@ -4,7 +4,37 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { ChevronLeft, Loader2, Star, Moon, Sparkles } from "lucide-react";
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
+
+const SKIN_TONES = [
+  { hex: "#FDEBD0", desc: "fair skin" },
+  { hex: "#F5CBA7", desc: "light skin" },
+  { hex: "#E0B88A", desc: "light olive skin" },
+  { hex: "#C68642", desc: "warm brown skin" },
+  { hex: "#8D5524", desc: "medium-brown skin" },
+  { hex: "#5C3A1E", desc: "dark brown skin" },
+  { hex: "#3B2410", desc: "deep brown skin" },
+];
+
+const HAIR_COLOURS = [
+  { hex: "#FAE3B4", desc: "blonde" },
+  { hex: "#C4873A", desc: "ginger" },
+  { hex: "#8B4513", desc: "light brown" },
+  { hex: "#4A2912", desc: "dark brown" },
+  { hex: "#1C1008", desc: "black" },
+  { hex: "#B7410E", desc: "red" },
+  { hex: "#D4D4D4", desc: "grey" },
+];
+
+const HAIR_STYLES = ["Short", "Long", "Curly", "Straight", "Braids", "Afro"];
+
+const EYE_COLOURS = [
+  { hex: "#6B8E23", desc: "green" },
+  { hex: "#4682B4", desc: "blue" },
+  { hex: "#8B4513", desc: "brown" },
+  { hex: "#2F1B0E", desc: "dark brown" },
+  { hex: "#BDB76B", desc: "hazel" },
+];
 
 const INTERESTS = [
   { label: "Animals", emoji: "🐾" },
@@ -33,10 +63,18 @@ const LANGUAGES = [
   { label: "German (Deutsch)", value: "de" },
 ];
 
+type Appearance = {
+  skinTone: string;
+  hairColour: string;
+  hairStyle: string;
+  eyeColour: string;
+};
+
 type OnboardingData = {
   name: string;
   age: number | null;
   gender: string;
+  appearance: Appearance;
   interests: string[];
   language: string;
 };
@@ -51,6 +89,7 @@ export default function Onboarding() {
     name: "",
     age: null,
     gender: "",
+    appearance: { skinTone: "", hairColour: "", hairStyle: "", eyeColour: "" },
     interests: [],
     language: "en-GB",
   });
@@ -79,6 +118,21 @@ export default function Onboarding() {
     setData((d) => ({ ...d, interests: d.interests.filter((i) => i !== label) }));
   };
 
+  const buildCharacterDescription = () => {
+    const skin = SKIN_TONES.find((s) => s.hex === data.appearance.skinTone)?.desc ?? "";
+    const hairCol = HAIR_COLOURS.find((h) => h.hex === data.appearance.hairColour)?.desc ?? "";
+    const hairSty = data.appearance.hairStyle ? data.appearance.hairStyle.toLowerCase() : "";
+    const eye = EYE_COLOURS.find((e) => e.hex === data.appearance.eyeColour)?.desc ?? "";
+    const parts: string[] = [];
+    parts.push(`A ${data.age}-year-old ${data.gender}`);
+    if (skin) parts[0] += ` with ${skin}`;
+    if (hairSty && hairCol) parts.push(`${hairSty} ${hairCol} hair`);
+    else if (hairCol) parts.push(`${hairCol} hair`);
+    else if (hairSty) parts.push(`${hairSty} hair`);
+    if (eye) parts.push(`${eye} eyes`);
+    return parts.join(", ");
+  };
+
   const handleSubmit = async () => {
     if (!user) return;
     setSubmitting(true);
@@ -87,6 +141,8 @@ export default function Onboarding() {
     // Show completion step first
     setStep(TOTAL_STEPS + 1);
 
+    const characterDescription = buildCharacterDescription();
+
     const { error: insertError } = await supabase.from("children").insert({
       profile_id: user.id,
       name: data.name,
@@ -94,6 +150,7 @@ export default function Onboarding() {
       gender: data.gender,
       interests: data.interests,
       language: data.language,
+      character_description: characterDescription,
     });
 
     if (insertError) {
@@ -115,8 +172,9 @@ export default function Onboarding() {
     if (step === 1) return data.name.trim().length > 0;
     if (step === 2) return data.age !== null;
     if (step === 3) return data.gender !== "";
-    if (step === 4) return data.interests.length > 0;
-    if (step === 5) return data.language !== "";
+    if (step === 4) return data.appearance.skinTone !== "" && data.appearance.hairColour !== "";
+    if (step === 5) return data.interests.length > 0;
+    if (step === 6) return data.language !== "";
     return false;
   };
 
@@ -220,9 +278,100 @@ export default function Onboarding() {
             </StepWrapper>
           )}
 
-          {/* Step 4: Interests */}
+          {/* Step 4: Appearance */}
           {step === 4 && (
             <StepWrapper key="step4">
+              <StepHeading>What does {data.name} look like?</StepHeading>
+              <p className="text-primary-foreground/70 text-center mb-4 -mt-2 text-sm">
+                This helps us create illustrations that look like your child
+              </p>
+
+              <div className="space-y-5">
+                <div>
+                  <p className="text-primary-foreground/80 text-xs font-medium mb-2">Skin tone</p>
+                  <div className="flex gap-2 justify-center">
+                    {SKIN_TONES.map((tone) => (
+                      <button
+                        key={tone.hex}
+                        onClick={() => setData((d) => ({ ...d, appearance: { ...d.appearance, skinTone: tone.hex } }))}
+                        className="w-10 h-10 rounded-full border-2 transition-all hover:scale-110"
+                        style={{
+                          backgroundColor: tone.hex,
+                          borderColor: data.appearance.skinTone === tone.hex ? "#F6C255" : "rgba(255,255,255,0.2)",
+                          boxShadow: data.appearance.skinTone === tone.hex ? "0 0 0 3px rgba(246,194,85,0.4)" : "none",
+                          transform: data.appearance.skinTone === tone.hex ? "scale(1.15)" : undefined,
+                        }}
+                        aria-label={tone.desc}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-primary-foreground/80 text-xs font-medium mb-2">Hair colour</p>
+                  <div className="flex gap-2 justify-center">
+                    {HAIR_COLOURS.map((col) => (
+                      <button
+                        key={col.hex}
+                        onClick={() => setData((d) => ({ ...d, appearance: { ...d.appearance, hairColour: col.hex } }))}
+                        className="w-10 h-10 rounded-full border-2 transition-all hover:scale-110"
+                        style={{
+                          backgroundColor: col.hex,
+                          borderColor: data.appearance.hairColour === col.hex ? "#F6C255" : "rgba(255,255,255,0.2)",
+                          boxShadow: data.appearance.hairColour === col.hex ? "0 0 0 3px rgba(246,194,85,0.4)" : "none",
+                          transform: data.appearance.hairColour === col.hex ? "scale(1.15)" : undefined,
+                        }}
+                        aria-label={col.desc}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-primary-foreground/80 text-xs font-medium mb-2">Hair style</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {HAIR_STYLES.map((style) => (
+                      <button
+                        key={style}
+                        onClick={() => setData((d) => ({ ...d, appearance: { ...d.appearance, hairStyle: style } }))}
+                        className={`py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
+                          data.appearance.hairStyle === style
+                            ? "border-amber-warm bg-amber-warm/20 text-primary-foreground shadow-sm"
+                            : "border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground hover:border-amber-warm/50"
+                        }`}
+                      >
+                        {style}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-primary-foreground/80 text-xs font-medium mb-2">Eye colour</p>
+                  <div className="flex gap-2 justify-center">
+                    {EYE_COLOURS.map((col) => (
+                      <button
+                        key={col.hex}
+                        onClick={() => setData((d) => ({ ...d, appearance: { ...d.appearance, eyeColour: col.hex } }))}
+                        className="w-10 h-10 rounded-full border-2 transition-all hover:scale-110"
+                        style={{
+                          backgroundColor: col.hex,
+                          borderColor: data.appearance.eyeColour === col.hex ? "#F6C255" : "rgba(255,255,255,0.2)",
+                          boxShadow: data.appearance.eyeColour === col.hex ? "0 0 0 3px rgba(246,194,85,0.4)" : "none",
+                          transform: data.appearance.eyeColour === col.hex ? "scale(1.15)" : undefined,
+                        }}
+                        aria-label={col.desc}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </StepWrapper>
+          )}
+
+          {/* Step 5: Interests */}
+          {step === 5 && (
+            <StepWrapper key="step5">
               <StepHeading>What does {data.name} love?</StepHeading>
               <p className="text-primary-foreground/70 text-center mb-6 -mt-2">Pick as many as you like!</p>
               <div className="grid grid-cols-3 gap-3">
@@ -290,9 +439,9 @@ export default function Onboarding() {
             </StepWrapper>
           )}
 
-          {/* Step 5: Language */}
-          {step === 5 && (
-            <StepWrapper key="step5">
+          {/* Step 6: Language */}
+          {step === 6 && (
+            <StepWrapper key="step6">
               <StepHeading>What language should stories be in?</StepHeading>
               <div className="space-y-3">
                 {LANGUAGES.map((lang) => (
