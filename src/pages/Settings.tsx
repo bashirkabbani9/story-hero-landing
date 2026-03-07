@@ -19,7 +19,39 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 
-// ─── Shared constants (duplicated from Onboarding for independence) ──────────
+// ─── Appearance constants ────────────────────────────────────────────────────
+
+const SKIN_TONES = [
+  { hex: "#FDEBD0", desc: "fair skin" },
+  { hex: "#F5CBA7", desc: "light skin" },
+  { hex: "#E0B88A", desc: "light olive skin" },
+  { hex: "#C68642", desc: "warm brown skin" },
+  { hex: "#8D5524", desc: "medium-brown skin" },
+  { hex: "#5C3A1E", desc: "dark brown skin" },
+  { hex: "#3B2410", desc: "deep brown skin" },
+];
+
+const HAIR_COLOURS = [
+  { hex: "#FAE3B4", desc: "blonde" },
+  { hex: "#C4873A", desc: "ginger" },
+  { hex: "#8B4513", desc: "light brown" },
+  { hex: "#4A2912", desc: "dark brown" },
+  { hex: "#1C1008", desc: "black" },
+  { hex: "#B7410E", desc: "red" },
+  { hex: "#D4D4D4", desc: "grey" },
+];
+
+const HAIR_STYLES = ["Short", "Long", "Curly", "Straight", "Braids", "Afro"];
+
+const EYE_COLOURS = [
+  { hex: "#6B8E23", desc: "green" },
+  { hex: "#4682B4", desc: "blue" },
+  { hex: "#8B4513", desc: "brown" },
+  { hex: "#2F1B0E", desc: "dark brown" },
+  { hex: "#BDB76B", desc: "hazel" },
+];
+
+// ─── Shared constants ────────────────────────────────────────────────────────
 
 const INTERESTS = [
   { label: "Animals",   emoji: "🐾" },
@@ -45,6 +77,37 @@ const LANGUAGES = [
   { label: "Turkish (Türkçe)", value: "tr" },
   { label: "German (Deutsch)", value: "de" },
 ];
+
+// ─── Appearance helpers ──────────────────────────────────────────────────────
+
+function parseCharacterDescription(desc: string | null | undefined) {
+  if (!desc) return { skinTone: "", hairColour: "", hairStyle: "", eyeColour: "" };
+  const result = { skinTone: "", hairColour: "", hairStyle: "", eyeColour: "" };
+  for (const t of SKIN_TONES) { if (desc.includes(t.desc)) { result.skinTone = t.hex; break; } }
+  for (const h of HAIR_COLOURS) { if (desc.includes(h.desc)) { result.hairColour = h.hex; break; } }
+  for (const s of HAIR_STYLES) { if (desc.toLowerCase().includes(s.toLowerCase())) { result.hairStyle = s; break; } }
+  for (const e of EYE_COLOURS) { if (desc.includes(e.desc + " eyes")) { result.eyeColour = e.hex; break; } }
+  return result;
+}
+
+function buildCharacterDescription(
+  age: number,
+  gender: string,
+  appearance: { skinTone: string; hairColour: string; hairStyle: string; eyeColour: string }
+) {
+  const skin = SKIN_TONES.find((s) => s.hex === appearance.skinTone)?.desc ?? "";
+  const hairCol = HAIR_COLOURS.find((h) => h.hex === appearance.hairColour)?.desc ?? "";
+  const hairSty = appearance.hairStyle ? appearance.hairStyle.toLowerCase() : "";
+  const eye = EYE_COLOURS.find((e) => e.hex === appearance.eyeColour)?.desc ?? "";
+  const parts: string[] = [];
+  parts.push(`A ${age}-year-old ${gender}`);
+  if (skin) parts[0] += ` with ${skin}`;
+  if (hairSty && hairCol) parts.push(`${hairSty} ${hairCol} hair`);
+  else if (hairCol) parts.push(`${hairCol} hair`);
+  else if (hairSty) parts.push(`${hairSty} hair`);
+  if (eye) parts.push(`${eye} eyes`);
+  return parts.join(", ");
+}
 
 // ─── Section wrapper ─────────────────────────────────────────────────────────
 
@@ -117,6 +180,7 @@ function ChildEditor({ child, onSaved }: { child: Child; onSaved: () => void }) 
   const [saving, setSaving]     = useState(false);
   const [saved, setSaved]       = useState(false);
   const [customInput, setCustomInput] = useState("");
+  const [appearance, setAppearance] = useState(() => parseCharacterDescription((child as any).character_description));
 
   const toggleInterest = (label: string) =>
     setInterests((prev) =>
@@ -131,15 +195,16 @@ function ChildEditor({ child, onSaved }: { child: Child; onSaved: () => void }) 
   };
 
   const removeCustomInterest = (label: string) => {
-    if (INTERESTS.some((i) => i.label === label)) return; // don't remove preset via this
+    if (INTERESTS.some((i) => i.label === label)) return;
     setInterests((prev) => prev.filter((i) => i !== label));
   };
 
   const handleSave = async () => {
     setSaving(true);
+    const characterDescription = buildCharacterDescription(age, child.gender, appearance);
     const { error } = await supabase
       .from("children")
-      .update({ name, age, interests, language })
+      .update({ name, age, interests, language, character_description: characterDescription })
       .eq("id", child.id);
 
     setSaving(false);
@@ -183,6 +248,63 @@ function ChildEditor({ child, onSaved }: { child: Child; onSaved: () => void }) 
             >
               {n}
             </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Appearance */}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-3">Appearance</label>
+
+        <p className="text-xs text-muted-foreground mb-2">Skin tone</p>
+        <div className="flex gap-2 mb-4">
+          {SKIN_TONES.map((tone) => (
+            <button
+              key={tone.hex}
+              onClick={() => setAppearance((a) => ({ ...a, skinTone: tone.hex }))}
+              className="w-9 h-9 rounded-full border-2 transition-all hover:scale-110"
+              style={{ backgroundColor: tone.hex, borderColor: appearance.skinTone === tone.hex ? "hsl(var(--primary))" : "hsl(var(--border))", boxShadow: appearance.skinTone === tone.hex ? "0 0 0 3px hsla(var(--primary), 0.3)" : "none", transform: appearance.skinTone === tone.hex ? "scale(1.15)" : undefined }}
+              aria-label={tone.desc}
+            />
+          ))}
+        </div>
+
+        <p className="text-xs text-muted-foreground mb-2">Hair colour</p>
+        <div className="flex gap-2 mb-4">
+          {HAIR_COLOURS.map((col) => (
+            <button
+              key={col.hex}
+              onClick={() => setAppearance((a) => ({ ...a, hairColour: col.hex }))}
+              className="w-9 h-9 rounded-full border-2 transition-all hover:scale-110"
+              style={{ backgroundColor: col.hex, borderColor: appearance.hairColour === col.hex ? "hsl(var(--primary))" : "hsl(var(--border))", boxShadow: appearance.hairColour === col.hex ? "0 0 0 3px hsla(var(--primary), 0.3)" : "none", transform: appearance.hairColour === col.hex ? "scale(1.15)" : undefined }}
+              aria-label={col.desc}
+            />
+          ))}
+        </div>
+
+        <p className="text-xs text-muted-foreground mb-2">Hair style</p>
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          {HAIR_STYLES.map((style) => (
+            <button
+              key={style}
+              onClick={() => setAppearance((a) => ({ ...a, hairStyle: style }))}
+              className={`py-2.5 rounded-xl border-2 text-xs font-medium transition-all ${appearance.hairStyle === style ? "border-primary bg-purple-light text-primary shadow-sm" : "border-border bg-background text-foreground hover:border-primary/40"}`}
+            >
+              {style}
+            </button>
+          ))}
+        </div>
+
+        <p className="text-xs text-muted-foreground mb-2">Eye colour</p>
+        <div className="flex gap-2">
+          {EYE_COLOURS.map((col) => (
+            <button
+              key={col.hex}
+              onClick={() => setAppearance((a) => ({ ...a, eyeColour: col.hex }))}
+              className="w-9 h-9 rounded-full border-2 transition-all hover:scale-110"
+              style={{ backgroundColor: col.hex, borderColor: appearance.eyeColour === col.hex ? "hsl(var(--primary))" : "hsl(var(--border))", boxShadow: appearance.eyeColour === col.hex ? "0 0 0 3px hsla(var(--primary), 0.3)" : "none", transform: appearance.eyeColour === col.hex ? "scale(1.15)" : undefined }}
+              aria-label={col.desc}
+            />
           ))}
         </div>
       </div>
@@ -405,6 +527,25 @@ export default function Settings() {
   const [loadingNotifs, setLoadingNotifs] = useState(true);
   const [savingNotifs, setSavingNotifs] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [loadingPortal, setLoadingPortal] = useState(false);
+
+  const handleManageSubscription = async () => {
+    setLoadingPortal(true);
+    try {
+      const res = await fetch("https://bashk1.app.n8n.cloud/webhook/customer-portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profileId: user!.id }),
+      });
+      const data = await res.json();
+      if (data.url) window.open(data.url, "_blank");
+      else throw new Error("No URL returned");
+    } catch {
+      toast({ title: "Something went wrong", description: "Please try again or email bashir@alkabbanisolutions.co.uk" });
+    } finally {
+      setLoadingPortal(false);
+    }
+  };
 
   // Fetch notification preference
   useEffect(() => {
@@ -434,7 +575,6 @@ export default function Settings() {
 
   const handleDeleteAccount = async () => {
     setDeleting(true);
-    // Delete child profiles first (RLS should cascade, but explicit is safer)
     if (user) {
       await supabase.from("children").delete().eq("profile_id", user.id);
       await supabase.from("profiles").delete().eq("id", user.id);
@@ -488,16 +628,10 @@ export default function Settings() {
         {/* Subscription */}
         <Section title="Subscription">
           <Row
-            icon={<ExternalLink className="w-5 h-5" />}
+            icon={loadingPortal ? <Loader2 className="w-5 h-5 animate-spin" /> : <ExternalLink className="w-5 h-5" />}
             label="Manage Subscription"
             sublabel="Billing, plan changes & invoices"
-            onClick={() =>
-              toast({
-                title: "Subscription management coming soon",
-                description:
-                  "Email bashir@alkabbanisolutions.co.uk for any billing questions.",
-              })
-            }
+            onClick={handleManageSubscription}
           />
         </Section>
 

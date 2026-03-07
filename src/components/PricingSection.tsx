@@ -46,7 +46,7 @@ const plans = [
 ];
 
 export default function PricingSection() {
-  const { user } = useAuth();
+  const { user, children: childProfiles } = useAuth();
   const navigate = useNavigate();
   const [loadingPriceId, setLoadingPriceId] = useState<string | null>(null);
 
@@ -60,7 +60,7 @@ export default function PricingSection() {
 
     setLoadingPriceId(priceId);
     try {
-      await redirectToStripeCheckout(priceId, user.email ?? undefined);
+      await redirectToStripeCheckout(priceId, user.email ?? undefined, user.id, childProfiles[0]?.id);
     } catch (err) {
       console.error("Stripe checkout error:", err);
     } finally {

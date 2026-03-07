@@ -4,7 +4,9 @@ export const PENDING_PRICE_KEY = "pendingPriceId";
 
 export async function redirectToStripeCheckout(
   priceId: string,
-  customerEmail?: string
+  customerEmail?: string,
+  profileId?: string,
+  childId?: string
 ) {
   const origin = window.location.origin;
 
@@ -14,6 +16,8 @@ export async function redirectToStripeCheckout(
     body: JSON.stringify({
       priceId,
       email: customerEmail ?? "",
+      profileId: profileId ?? "",
+      childId: childId ?? "",
       successUrl: `${origin}/dashboard?checkout=success`,
       cancelUrl: `${origin}/pricing`,
     }),
