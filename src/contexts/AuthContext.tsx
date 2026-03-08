@@ -27,11 +27,13 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
   const [childProfiles, setChildProfiles] = useState<Child[]>([]);
 
   const fetchChildren = async (userId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("children")
       .select("*")
       .eq("profile_id", userId);
-    setChildProfiles(data ?? []);
+    if (!error) {
+      setChildProfiles(data ?? []);
+    }
   };
 
   const refreshChildren = async () => {

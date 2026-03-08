@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { redirectToStripeCheckout, PENDING_PRICE_KEY } from "@/lib/stripeCheckout";
+import { toast } from "@/hooks/use-toast";
 
 const plans = [
   {
@@ -61,8 +62,8 @@ export default function PricingSection() {
     setLoadingPriceId(priceId);
     try {
       await redirectToStripeCheckout(priceId, user.email ?? undefined, user.id, childProfiles[0]?.id);
-    } catch (err) {
-      console.error("Stripe checkout error:", err);
+    } catch {
+      toast({ title: "Something went wrong", description: "Please try again." });
     } finally {
       setLoadingPriceId(null);
     }

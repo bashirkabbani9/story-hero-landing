@@ -68,11 +68,15 @@ function StarRating({
   const handleRate = async (val: number) => {
     setRating(val);
     setSaved(false);
-    await supabase
+    const { error } = await supabase
       .from("stories")
       .update({ parent_rating: val })
       .eq("id", storyId);
-    setSaved(true);
+    if (error) {
+      setRating(initial ?? 0);
+    } else {
+      setSaved(true);
+    }
   };
 
   const starColor = bedtime ? "#f5c56c" : "#ffffff";
@@ -328,8 +332,6 @@ export default function StoryReader() {
       }
       setStory(storyRes.data);
       const fetchedPages = pagesRes.data ?? [];
-      console.log('Fetched pages:', fetchedPages);
-      console.log('First page illustration_url:', fetchedPages?.[0]?.illustration_url);
       setPages(fetchedPages);
 
       // Fetch child age for adaptive font sizing

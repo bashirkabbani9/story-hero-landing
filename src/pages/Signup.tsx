@@ -39,11 +39,16 @@ export default function Signup() {
 
     if (data.user) {
       // Create profile row
-      await supabase.from("profiles").upsert({
+      const { error: profileError } = await supabase.from("profiles").upsert({
         id: data.user.id,
         email: formData.email,
         full_name: formData.full_name,
       });
+      if (profileError) {
+        setError("Account created but profile setup failed. Please try logging in.");
+        setLoading(false);
+        return;
+      }
 
       // If session exists immediately (email confirmation disabled), redirect
       if (data.session) {
@@ -209,9 +214,7 @@ export default function Signup() {
             </button>
 
             <p className="text-center text-xs text-muted-foreground">
-              By signing up, you agree to our{" "}
-              <a href="#" className="underline">Terms</a> &amp;{" "}
-              <a href="#" className="underline">Privacy Policy</a>.
+              No credit card required. Cancel anytime.
             </p>
           </form>
 

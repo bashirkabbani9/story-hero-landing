@@ -537,6 +537,7 @@ export default function Settings() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ profileId: user!.id }),
       });
+      if (!res.ok) throw new Error("Request failed");
       const data = await res.json();
       if (data.url) window.open(data.url, "_blank");
       else throw new Error("No URL returned");
@@ -565,19 +566,29 @@ export default function Settings() {
     const next = !emailNotifs;
     setEmailNotifs(next);
     setSavingNotifs(true);
-    await supabase
+    const { error } = await supabase
       .from("profiles")
       .update({ email_notifications: next })
       .eq("id", user!.id);
     setSavingNotifs(false);
-    toast({ title: next ? "Notifications enabled 🔔" : "Notifications disabled" });
+    if (error) {
+      setEmailNotifs(!next);
+      toast({ title: "Couldn't save preference", description: "Please try again.", variant: "destructive" });
+    } else {
+      toast({ title: next ? "Notifications enabled" : "Notifications disabled" });
+    }
   };
 
   const handleDeleteAccount = async () => {
     setDeleting(true);
     if (user) {
-      await supabase.from("children").delete().eq("profile_id", user.id);
-      await supabase.from("profiles").delete().eq("id", user.id);
+      const { error: childErr } = await supabase.from("children").delete().eq("profile_id", user.id);
+      const { error: profileErr } = await supabase.from("profiles").delete().eq("id", user.id);
+      if (childErr || profileErr) {
+        toast({ title: "Something went wrong", description: "Please try again or contact support.", variant: "destructive" });
+        setDeleting(false);
+        return;
+      }
     }
     await signOut();
     navigate("/", { replace: true });

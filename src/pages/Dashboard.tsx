@@ -366,7 +366,6 @@ export default function Dashboard() {
       const { url } = await res.json();
       if (url) window.location.href = url;
     } catch (err) {
-      console.error("On-demand purchase error:", err);
       toast({ title: "Something went wrong", description: "Please try again." });
     } finally {
       setBuyingStory(false);
@@ -382,11 +381,10 @@ export default function Dashboard() {
       .select("full_name")
       .eq("id", user.id)
       .maybeSingle()
-      .then(({ data }) => {
-        if (data?.full_name) {
+      .then(({ data, error }) => {
+        if (!error && data?.full_name) {
           setParentName(data.full_name.split(" ")[0]);
         } else {
-          // Fall back to email prefix
           setParentName(user.email?.split("@")[0] ?? "");
         }
       });
@@ -405,7 +403,10 @@ export default function Dashboard() {
       .eq("child_id", child.id)
       .eq("status", "ready")
       .order("created_at", { ascending: false })
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          toast({ title: "Couldn't load stories", description: "Please refresh the page to try again." });
+        }
         setStories(data ?? []);
         setLoadingStories(false);
       });
