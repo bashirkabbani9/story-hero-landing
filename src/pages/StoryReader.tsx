@@ -286,7 +286,7 @@ function StoryTextPage({
   );
 }
 
-// ─── Combined image+text page for mobile ────────────────────────────────────
+// ─── Combined image+text page (illustration with text overlay) ──────────────
 
 const StoryPageCombined = forwardRef<
   HTMLDivElement,
@@ -296,10 +296,11 @@ const StoryPageCombined = forwardRef<
     illustrationUrl: string | null;
     bedtime: boolean;
     childAge: number | null;
+    isMobile: boolean;
   }
->(({ text, pageNumber, illustrationUrl, bedtime, childAge }, ref) => {
+>(({ text, pageNumber, illustrationUrl, bedtime, childAge, isMobile }, ref) => {
   const textRef = useRef<HTMLDivElement>(null);
-  const baseFontSize = getTextFontSize(text, childAge, true);
+  const baseFontSize = getTextFontSize(text, childAge, isMobile);
   const [fittedSize, setFittedSize] = useState(parseInt(baseFontSize));
 
   const storyFontFamily =
@@ -340,7 +341,7 @@ const StoryPageCombined = forwardRef<
         background: bedtime ? "#1a1a2e" : "#F5F0E8",
       }}
     >
-      {/* Full-bleed illustration */}
+      {/* Full-bleed illustration (slightly zoomed out to show more of the scene) */}
       {illustrationUrl ? (
         <img
           src={illustrationUrl}
@@ -353,6 +354,8 @@ const StoryPageCombined = forwardRef<
             height: "100%",
             objectFit: "cover",
             objectPosition: "center top",
+            transform: "scale(0.92)",
+            transformOrigin: "top center",
           }}
         />
       ) : (
@@ -391,7 +394,7 @@ const StoryPageCombined = forwardRef<
           display: "flex",
           flexDirection: "column",
           justifyContent: "flex-end",
-          padding: "0 24px 16px",
+          padding: isMobile ? "0 24px 16px" : "0 36px 20px",
         }}
       >
         <div
@@ -985,41 +988,18 @@ export default function StoryReader() {
             clickEventForward={false}
             renderOnlyPageLengthChange={false}
           >
-            {/* ── STORY PAGES ── */}
-            {pages.filter(p => p.page_number > 0).flatMap((page) =>
-              isMobile
-                ? [
-                    /* Mobile: combined image + text on one page */
-                    <StoryPageCombined
-                      key={`${page.id}-combined`}
-                      text={page.text}
-                      pageNumber={page.page_number}
-                      illustrationUrl={page.illustration_url}
-                      bedtime={bedtime}
-                      childAge={childAge}
-                    />,
-                  ]
-                : [
-                    /* Desktop left: full-bleed illustration */
-                    <BookPage key={`${page.id}-art`} bgImage={page.illustration_url} bedtime={bedtime}>
-                      {!page.illustration_url && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-6xl opacity-50">✨</span>
-                        </div>
-                      )}
-                    </BookPage>,
-                    /* Desktop right: decorated text page */
-                    <BookPage key={`${page.id}-text`} bgImage={null} bedtime={bedtime}>
-                      <StoryTextPage
-                        text={page.text}
-                        pageNumber={page.page_number}
-                        bedtime={bedtime}
-                        childAge={childAge}
-                        isMobile={false}
-                      />
-                    </BookPage>,
-                  ]
-            )}
+            {/* ── STORY PAGES (combined illustration + text overlay) ── */}
+            {pages.filter(p => p.page_number > 0).map((page) => (
+              <StoryPageCombined
+                key={`${page.id}-combined`}
+                text={page.text}
+                pageNumber={page.page_number}
+                illustrationUrl={page.illustration_url}
+                bedtime={bedtime}
+                childAge={childAge}
+                isMobile={isMobile}
+              />
+            ))}
 
             {/* ── END PAGE ── */}
             <BookPage bgImage={pages[pages.length - 1]?.illustration_url ?? story.cover_image_url} bedtime={bedtime}>
