@@ -347,7 +347,7 @@ const StoryPageCombined = forwardRef<
             top: 0,
             left: 0,
             width: "100%",
-            height: "65%",
+            height: "60%",
             objectFit: "cover",
             objectPosition: "center center",
           }}
@@ -359,7 +359,7 @@ const StoryPageCombined = forwardRef<
             top: 0,
             left: 0,
             width: "100%",
-            height: "65%",
+            height: "60%",
             background: bedtime ? FALLBACK_GRADIENT_BEDTIME : FALLBACK_GRADIENT,
             display: "flex",
             alignItems: "center",
@@ -374,7 +374,7 @@ const StoryPageCombined = forwardRef<
       <div
         style={{
           position: "absolute",
-          top: "50%",
+          top: "45%",
           left: 0,
           right: 0,
           height: "20%",
@@ -392,7 +392,7 @@ const StoryPageCombined = forwardRef<
           bottom: 0,
           left: 0,
           right: 0,
-          height: "38%",
+          height: "42%",
           background: bedtime ? "#1a1a2e" : "#FEFCF7",
           display: "flex",
           flexDirection: "column",
@@ -635,11 +635,18 @@ export default function StoryReader() {
 
   // ── Touch / swipe for mobile ──
   const handleTouchStart = (e: React.TouchEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest("button, a")) return;
     touchStartX.current = e.touches[0].clientX;
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStartX.current === null) return;
+    const target = e.target as HTMLElement;
+    if (target.closest("button, a")) {
+      touchStartX.current = null;
+      return;
+    }
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     touchStartX.current = null;
     if (Math.abs(dx) > 50) {
@@ -924,8 +931,6 @@ export default function StoryReader() {
         <>
           <button
             onClick={(e) => { e.stopPropagation(); goBack(); }}
-            onTouchStart={(e) => e.stopPropagation()}
-            onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); goBack(); }}
             className="fixed left-3 top-1/2 -translate-y-1/2 z-[60] w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md active:scale-90"
             style={{ background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.25)" }}
             aria-label="Previous page"
@@ -934,8 +939,6 @@ export default function StoryReader() {
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); goForward(); }}
-            onTouchStart={(e) => e.stopPropagation()}
-            onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); goForward(); }}
             className="fixed right-3 top-1/2 -translate-y-1/2 z-[60] w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md active:scale-90"
             style={{ background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.25)" }}
             aria-label="Next page"
