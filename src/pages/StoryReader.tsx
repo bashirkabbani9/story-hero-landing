@@ -568,7 +568,7 @@ export default function StoryReader() {
       if (curr <= 0) {
         setBookOpened(false);
       } else {
-        pf.flipPrev();
+        pf.turnToPage(curr - 1);
       }
     };
 
@@ -578,7 +578,13 @@ export default function StoryReader() {
       const now = Date.now();
       if (now - lastNav < NAV_COOLDOWN) return;
       lastNav = now;
-      flipBookRef.current?.pageFlip()?.flipNext();
+      const pf = flipBookRef.current?.pageFlip();
+      if (!pf) return;
+      const curr = pf.getCurrentPageIndex();
+      const total = pf.getPageCount();
+      if (curr < total - 1) {
+        pf.turnToPage(curr + 1);
+      }
     };
 
     // Attach native listeners — these fire before any library can intercept
@@ -672,18 +678,27 @@ export default function StoryReader() {
     }
   }, [currentPage, pages]);
 
-  // ── Navigation ──
+  // ── Navigation (use turnToPage instead of flipPrev/flipNext for portrait mode reliability) ──
   const goForward = useCallback(() => {
-    flipBookRef.current?.pageFlip()?.flipNext();
+    const pf = flipBookRef.current?.pageFlip();
+    if (!pf) return;
+    const curr = pf.getCurrentPageIndex();
+    const total = pf.getPageCount();
+    if (curr < total - 1) {
+      pf.turnToPage(curr + 1);
+    }
   }, []);
 
   const goBack = useCallback(() => {
-    if (currentPage === 0) {
+    const pf = flipBookRef.current?.pageFlip();
+    if (!pf) return;
+    const curr = pf.getCurrentPageIndex();
+    if (curr <= 0) {
       setBookOpened(false);
       return;
     }
-    flipBookRef.current?.pageFlip()?.flipPrev();
-  }, [currentPage]);
+    pf.turnToPage(curr - 1);
+  }, []);
 
   // ── Touch / swipe for mobile ──
   const handleTouchStart = (e: React.TouchEvent) => {
