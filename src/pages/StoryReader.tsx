@@ -127,58 +127,122 @@ const FALLBACK_GRADIENT =
 const FALLBACK_GRADIENT_BEDTIME =
   "radial-gradient(ellipse at 30% 20%, #1a1a4e 0%, #2d2060 40%, #0d0d2a 100%)";
 
-// ─── Auto-fit text component ────────────────────────────────────────────────
+// ─── Layout types for text overlays ─────────────────────────────────────────
 
-function AutoFitText({
+const OVERLAY_LAYOUTS = ["parchment", "frosted", "gradient"] as const;
+type OverlayLayout = (typeof OVERLAY_LAYOUTS)[number];
+
+function getOverlayLayout(pageNumber: number): OverlayLayout {
+  return OVERLAY_LAYOUTS[(pageNumber - 1) % 3];
+}
+
+// ─── Storybook text overlay component ───────────────────────────────────────
+
+function StoryTextOverlay({
   text,
   pageNumber,
-  initialFontSize,
-  pageTextFont,
-  pageNumColor,
-  textAreaBg,
+  layoutType,
+  bedtime,
+  childAge,
+  isMobile,
 }: {
   text: string;
   pageNumber: number;
-  initialFontSize: number;
-  pageTextFont: React.CSSProperties;
-  pageNumColor: string;
-  textAreaBg: string;
+  layoutType: OverlayLayout;
+  bedtime: boolean;
+  childAge: number | null;
+  isMobile: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [fontSize, setFontSize] = useState(initialFontSize);
+  const fontSize = getTextFontSize(text, childAge, isMobile);
+  const [fittedSize, setFittedSize] = useState(parseInt(fontSize));
+
+  const storyFontFamily =
+    childAge !== null && childAge >= 8 && childAge <= 12
+      ? "'Georgia', 'Baskerville Old Face', 'Garamond', serif"
+      : "'Andika', 'Century Gothic', 'Avenir', sans-serif";
 
   useLayoutEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    let size = initialFontSize;
+    let size = parseInt(fontSize);
     el.style.fontSize = size + "px";
-    while (el.scrollHeight > el.clientHeight && size > 12) {
+    while (el.scrollHeight > el.clientHeight && size > 11) {
       size -= 1;
       el.style.fontSize = size + "px";
     }
-    setFontSize(size);
-  }, [text, initialFontSize]);
+    setFittedSize(size);
+  }, [text, fontSize]);
+
+  // Layout-specific styles
+  const isGradient = layoutType === "gradient";
+
+  const overlayStyle: React.CSSProperties = (() => {
+    const base: React.CSSProperties = {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "flex-end",
+      padding: isGradient
+        ? (isMobile ? "40px 20px 14px" : "48px 28px 16px")
+        : (isMobile ? "16px 20px 14px" : "20px 28px 16px"),
+      overflow: "hidden",
+      minHeight: "28%",
+      maxHeight: "45%",
+    };
+
+    if (layoutType === "parchment") {
+      return {
+        ...base,
+        background: bedtime ? "rgba(26, 26, 46, 0.92)" : "rgba(254, 252, 247, 0.9)",
+        borderTop: bedtime ? "2px solid rgba(245, 197, 108, 0.25)" : "2px solid rgba(180, 140, 80, 0.3)",
+        borderRadius: "16px 16px 0 0",
+        boxShadow: "0 -4px 20px rgba(0, 0, 0, 0.15)",
+      };
+    }
+
+    if (layoutType === "frosted") {
+      return {
+        ...base,
+        background: bedtime ? "rgba(26, 26, 46, 0.78)" : "rgba(254, 252, 247, 0.68)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        borderTop: bedtime ? "1px solid rgba(245, 197, 108, 0.15)" : "1px solid rgba(255, 255, 255, 0.4)",
+      };
+    }
+
+    // gradient
+    return {
+      ...base,
+      background: bedtime
+        ? "linear-gradient(to top, rgba(13,13,26,0.85) 0%, rgba(13,13,26,0.5) 55%, transparent 100%)"
+        : "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.35) 55%, transparent 100%)",
+      minHeight: "35%",
+    };
+  })();
+
+  const textStyle: React.CSSProperties = {
+    fontFamily: storyFontFamily,
+    fontWeight: 500,
+    fontSize: fittedSize + "px",
+    lineHeight: 1.65,
+    textAlign: "left",
+    color: isGradient
+      ? (bedtime ? "#f5c56c" : "#ffffff")
+      : (bedtime ? "#e8dcc8" : "#3D2E1F"),
+    textShadow: isGradient ? "2px 2px 8px rgba(0,0,0,0.7)" : "none",
+  };
+
+  const pageNumColor = isGradient
+    ? "rgba(255,255,255,0.35)"
+    : (bedtime ? "rgba(232,220,200,0.35)" : "rgba(61,46,31,0.3)");
 
   return (
-    <div
-      ref={containerRef}
-      style={{
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: "42%",
-        background: textAreaBg,
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        padding: "20px 24px 16px",
-        overflow: "hidden",
-      }}
-    >
-      <p style={{ ...pageTextFont, fontSize: fontSize + "px", lineHeight: 1.7, textAlign: "left" }}>
-        {text}
-      </p>
+    <div ref={containerRef} style={overlayStyle}>
+      <p style={textStyle}>{text}</p>
       <span
         style={{
           display: "block",
@@ -416,18 +480,6 @@ export default function StoryReader() {
     color: textColor,
     textShadow,
   };
-  // Age-adaptive font family for story text
-  const storyFontFamily =
-    childAge !== null && childAge >= 8 && childAge <= 12
-      ? "'Georgia', 'Baskerville Old Face', 'Garamond', serif"
-      : "'Andika', 'Century Gothic', 'Avenir', sans-serif";
-  // Story page text (separate zone, not overlay)
-  const pageTextFont: React.CSSProperties = {
-    fontFamily: storyFontFamily,
-    fontWeight: 500,
-    color: bedtime ? "#e8dcc8" : "#3D2E1F",
-  };
-
   const onFlip = useCallback((e: any) => {
     setCurrentPage(e.data);
   }, []);
@@ -470,11 +522,6 @@ export default function StoryReader() {
       </div>
     );
   }
-
-  // ── Gradient for cover only ──
-  const coverGradient = "linear-gradient(to top, rgba(0,0,0,0.7), transparent)";
-  const textAreaBg = bedtime ? "#1a1a2e" : "#FEFCF7";
-  const pageNumColor = bedtime ? "rgba(232,220,200,0.4)" : "rgba(61,46,31,0.35)";
 
   const coverImageUrl = pages[0]?.illustration_url ?? story.cover_image_url;
 
@@ -744,47 +791,19 @@ export default function StoryReader() {
             clickEventForward={false}
             renderOnlyPageLengthChange={false}
           >
-            {/* ── STORY PAGES ── */}
-            {pages.filter(p => p.page_number > 0).map((page) => {
-              const fontSize = getTextFontSize(page.text, childAge, isMobile);
-              // All flip book pages use split layout
-              return (
-                <BookPage key={page.id} bgImage={null} bedtime={bedtime}>
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      height: "58%",
-                      overflow: "hidden",
-                      background: bedtime ? "#1a1a2e" : "#F5F0E8",
-                    }}
-                  >
-                    {page.illustration_url && (
-                      <img
-                        src={page.illustration_url}
-                        alt=""
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          objectPosition: "center top",
-                        }}
-                      />
-                    )}
-                  </div>
-                  <AutoFitText
-                    text={page.text}
-                    pageNumber={page.page_number}
-                    initialFontSize={parseInt(fontSize)}
-                    pageTextFont={pageTextFont}
-                    pageNumColor={pageNumColor}
-                    textAreaBg={textAreaBg}
-                  />
-                </BookPage>
-              );
-            })}
+            {/* ── STORY PAGES (full-bleed illustration + text overlay) ── */}
+            {pages.filter(p => p.page_number > 0).map((page) => (
+              <BookPage key={page.id} bgImage={page.illustration_url} bedtime={bedtime}>
+                <StoryTextOverlay
+                  text={page.text}
+                  pageNumber={page.page_number}
+                  layoutType={getOverlayLayout(page.page_number)}
+                  bedtime={bedtime}
+                  childAge={childAge}
+                  isMobile={isMobile}
+                />
+              </BookPage>
+            ))}
 
             {/* ── END PAGE ── */}
             <BookPage bgImage={pages[pages.length - 1]?.illustration_url ?? story.cover_image_url} bedtime={bedtime}>
