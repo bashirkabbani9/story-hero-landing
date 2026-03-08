@@ -1,4 +1,5 @@
 import { Moon, Heart } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Footer() {
   return (
@@ -28,12 +29,12 @@ export default function Footer() {
             <a href="#pricing" className="hover:text-primary-foreground transition-colors">
               Pricing
             </a>
-            <a href="#" className="hover:text-primary-foreground transition-colors">
+            <Link to="/privacy" className="hover:text-primary-foreground transition-colors">
               Privacy Policy
-            </a>
-            <a href="#" className="hover:text-primary-foreground transition-colors">
+            </Link>
+            <Link to="/terms" className="hover:text-primary-foreground transition-colors">
               Terms
-            </a>
+            </Link>
           </div>
 
           {/* Copyright */}
