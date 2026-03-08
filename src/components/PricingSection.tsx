@@ -8,7 +8,7 @@ import { toast } from "@/hooks/use-toast";
 const plans = [
   {
     name: "Monthly",
-    priceId: "price_1T1rzaBf7Ygg5uvwXAKt9iHz",
+    priceId: "price_1T8WesPeRY67mU4NWi00fww7",
     price: "£7.99",
     period: "/month",
     description: "Perfect for trying it out",
@@ -26,7 +26,7 @@ const plans = [
   },
   {
     name: "Annual",
-    priceId: "price_1T1s0lBf7Ygg5uvwRoXojJwk",
+    priceId: "price_1T8WenPeRY67mU4NM43uJ22B",
     price: "£5.99",
     period: "/month",
     billed: "Billed £71.88/year",

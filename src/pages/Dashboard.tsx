@@ -354,7 +354,7 @@ export default function Dashboard() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          priceId: "price_1T82KNBf7Ygg5uvwKcikpaw0",
+          priceId: "price_1T8WeoPeRY67mU4NPBac1gPp",
           email: user?.email ?? "",
           profileId: user?.id ?? "",
           childId: child.id,
