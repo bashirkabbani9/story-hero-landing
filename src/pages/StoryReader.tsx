@@ -326,10 +326,6 @@ const StoryPageCombined = forwardRef<
   const firstLetter = text.charAt(0);
   const restOfText = text.slice(1);
 
-  const gradientOverlay = bedtime
-    ? "linear-gradient(to bottom, transparent 0%, transparent 40%, rgba(26,26,46,0.70) 55%, rgba(26,26,46,0.93) 70%, rgba(26,26,46,0.97) 100%)"
-    : "linear-gradient(to bottom, transparent 0%, transparent 40%, rgba(254,252,247,0.65) 55%, rgba(254,252,247,0.92) 70%, rgba(254,252,247,0.97) 100%)";
-
   return (
     <div
       ref={ref}
@@ -341,7 +337,7 @@ const StoryPageCombined = forwardRef<
         background: bedtime ? "#1a1a2e" : "#F5F0E8",
       }}
     >
-      {/* Full-bleed illustration (positioned to focus on the character area) */}
+      {/* Illustration in top portion — shorter container = less side-cropping */}
       {illustrationUrl ? (
         <img
           src={illustrationUrl}
@@ -351,16 +347,19 @@ const StoryPageCombined = forwardRef<
             top: 0,
             left: 0,
             width: "100%",
-            height: "100%",
+            height: "65%",
             objectFit: "cover",
-            objectPosition: "center 35%",
+            objectPosition: "center center",
           }}
         />
       ) : (
         <div
           style={{
             position: "absolute",
-            inset: 0,
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "65%",
             background: bedtime ? FALLBACK_GRADIENT_BEDTIME : FALLBACK_GRADIENT,
             display: "flex",
             alignItems: "center",
@@ -371,28 +370,34 @@ const StoryPageCombined = forwardRef<
         </div>
       )}
 
-      {/* Gradient overlay for text readability */}
+      {/* Gradient blending image into text area */}
       <div
         style={{
           position: "absolute",
-          inset: 0,
-          background: gradientOverlay,
+          top: "50%",
+          left: 0,
+          right: 0,
+          height: "20%",
+          background: bedtime
+            ? "linear-gradient(to bottom, transparent, #1a1a2e)"
+            : "linear-gradient(to bottom, transparent, #FEFCF7)",
           pointerEvents: "none",
         }}
       />
 
-      {/* Text overlay at bottom */}
+      {/* Text area at bottom */}
       <div
         style={{
           position: "absolute",
           bottom: 0,
           left: 0,
           right: 0,
-          height: "45%",
+          height: "38%",
+          background: bedtime ? "#1a1a2e" : "#FEFCF7",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "flex-end",
-          padding: isMobile ? "0 24px 16px" : "0 36px 20px",
+          justifyContent: "flex-start",
+          padding: isMobile ? "8px 24px 16px" : "12px 36px 20px",
         }}
       >
         <div
@@ -413,9 +418,7 @@ const StoryPageCombined = forwardRef<
               lineHeight: 1.7,
               color: textColor,
               textAlign: "left",
-              textShadow: bedtime
-                ? "0 1px 4px rgba(0,0,0,0.5)"
-                : "0 1px 3px rgba(254,252,247,0.7)",
+              textShadow: "none",
             }}
           >
             <span
@@ -427,9 +430,7 @@ const StoryPageCombined = forwardRef<
                 color: dropCapColor,
                 marginRight: "5px",
                 marginTop: "2px",
-                textShadow: bedtime
-                  ? "0 2px 6px rgba(0,0,0,0.5)"
-                  : "0 1px 4px rgba(254,252,247,0.8)",
+                textShadow: bedtime ? "none" : "1px 1px 2px rgba(123, 91, 42, 0.15)",
               }}
             >
               {firstLetter}
@@ -923,19 +924,23 @@ export default function StoryReader() {
         <>
           <button
             onClick={(e) => { e.stopPropagation(); goBack(); }}
-            className="fixed left-3 top-1/2 -translate-y-1/2 z-50 w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-opacity active:scale-90"
-            style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)" }}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); goBack(); }}
+            className="fixed left-3 top-1/2 -translate-y-1/2 z-[60] w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md active:scale-90"
+            style={{ background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.25)" }}
             aria-label="Previous page"
           >
-            <ArrowLeft className="w-5 h-5" style={{ color: "#ffffffcc" }} />
+            <ArrowLeft className="w-5 h-5" style={{ color: "#ffffffee" }} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); goForward(); }}
-            className="fixed right-3 top-1/2 -translate-y-1/2 z-50 w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-opacity active:scale-90"
-            style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.2)" }}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); goForward(); }}
+            className="fixed right-3 top-1/2 -translate-y-1/2 z-[60] w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md active:scale-90"
+            style={{ background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.25)" }}
             aria-label="Next page"
           >
-            <ArrowLeft className="w-5 h-5 rotate-180" style={{ color: "#ffffffcc" }} />
+            <ArrowLeft className="w-5 h-5 rotate-180" style={{ color: "#ffffffee" }} />
           </button>
         </>
       )}
