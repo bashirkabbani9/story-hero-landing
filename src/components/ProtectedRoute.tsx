@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Moon } from "lucide-react";
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { user, loading, hasChildren } = useAuth();
+  const { user, loading, childrenLoaded, hasChildren } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -22,8 +22,22 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
 
   if (!user) return <Navigate to="/login" replace />;
 
+  // Wait for children to be fetched before deciding on onboarding redirect
+  if (!childrenLoaded && location.pathname !== "/onboarding") {
+    return (
+      <div className="min-h-screen gradient-hero flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 text-primary-foreground">
+          <div className="w-14 h-14 gradient-amber rounded-full flex items-center justify-center animate-pulse">
+            <Moon className="w-7 h-7 text-accent-foreground" />
+          </div>
+          <p className="font-display text-lg">Loading your stories…</p>
+        </div>
+      </div>
+    );
+  }
+
   // If user has no child profiles and isn't already on onboarding, redirect there
-  if (!hasChildren && location.pathname !== "/onboarding") {
+  if (childrenLoaded && !hasChildren && location.pathname !== "/onboarding") {
     return <Navigate to="/onboarding" replace />;
   }
 
