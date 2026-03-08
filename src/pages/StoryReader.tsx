@@ -543,6 +543,58 @@ export default function StoryReader() {
   // Touch tracking for mobile swipe
   const touchStartX = useRef<number | null>(null);
 
+  // Mobile nav button refs — use native DOM listeners to bypass react-pageflip interference
+  const backBtnRef = useRef<HTMLButtonElement>(null);
+  const fwdBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isMobile || !bookOpened) return;
+    const backBtn = backBtnRef.current;
+    const fwdBtn = fwdBtnRef.current;
+    if (!backBtn || !fwdBtn) return;
+
+    let lastNav = 0;
+    const NAV_COOLDOWN = 400; // prevent double-firing
+
+    const handleBack = (e: Event) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const now = Date.now();
+      if (now - lastNav < NAV_COOLDOWN) return;
+      lastNav = now;
+      const pf = flipBookRef.current?.pageFlip();
+      if (!pf) return;
+      const curr = pf.getCurrentPageIndex();
+      if (curr <= 0) {
+        setBookOpened(false);
+      } else {
+        pf.flipPrev();
+      }
+    };
+
+    const handleFwd = (e: Event) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const now = Date.now();
+      if (now - lastNav < NAV_COOLDOWN) return;
+      lastNav = now;
+      flipBookRef.current?.pageFlip()?.flipNext();
+    };
+
+    // Attach native listeners — these fire before any library can intercept
+    backBtn.addEventListener("touchend", handleBack, { capture: true });
+    backBtn.addEventListener("click", handleBack);
+    fwdBtn.addEventListener("touchend", handleFwd, { capture: true });
+    fwdBtn.addEventListener("click", handleFwd);
+
+    return () => {
+      backBtn.removeEventListener("touchend", handleBack, { capture: true });
+      backBtn.removeEventListener("click", handleBack);
+      fwdBtn.removeEventListener("touchend", handleFwd, { capture: true });
+      fwdBtn.removeEventListener("click", handleFwd);
+    };
+  }, [isMobile, bookOpened]);
+
   // ── Calculate book size ──
   useEffect(() => {
     function calcSize() {
@@ -892,27 +944,6 @@ export default function StoryReader() {
   // ── OPENED BOOK (flip book without cover page) ──
   return (
     <>
-      {/* ── Mobile nav arrows — rendered OUTSIDE the flipbook container to avoid touch event conflicts ── */}
-      {isMobile && (
-        <>
-          <button
-            onPointerUp={(e) => { e.stopPropagation(); e.preventDefault(); goBack(); }}
-            className="fixed left-3 top-1/2 -translate-y-1/2 z-[60] w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md active:scale-90"
-            style={{ background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.25)" }}
-            aria-label="Previous page"
-          >
-            <ArrowLeft className="w-5 h-5" style={{ color: "#ffffffee" }} />
-          </button>
-          <button
-            onPointerUp={(e) => { e.stopPropagation(); e.preventDefault(); goForward(); }}
-            className="fixed right-3 top-1/2 -translate-y-1/2 z-[60] w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md active:scale-90"
-            style={{ background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.25)" }}
-            aria-label="Next page"
-          >
-            <ArrowLeft className="w-5 h-5 rotate-180" style={{ color: "#ffffffee" }} />
-          </button>
-        </>
-      )}
     <div
       ref={containerRef}
       className="fixed inset-0 flex items-center justify-center overflow-hidden select-none"
@@ -994,7 +1025,7 @@ export default function StoryReader() {
             showPageCorners={!isMobile}
             disableFlipByClick={isMobile}
             useMouseEvents={!isMobile}
-            swipeDistance={50}
+            swipeDistance={isMobile ? 10000 : 50}
             clickEventForward={false}
             renderOnlyPageLengthChange={false}
           >
@@ -1042,6 +1073,58 @@ export default function StoryReader() {
         )}
       </div>
     </div>
+
+    {/* ── Mobile nav arrows — AFTER container in DOM so they're on top, using refs for native event listeners ── */}
+    {isMobile && (
+      <>
+        <button
+          ref={backBtnRef}
+          aria-label="Previous page"
+          style={{
+            position: "fixed",
+            left: "12px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            zIndex: 9999,
+            width: "48px",
+            height: "48px",
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(255,255,255,0.25)",
+            border: "1px solid rgba(255,255,255,0.3)",
+            touchAction: "manipulation",
+            WebkitTapHighlightColor: "transparent",
+          }}
+        >
+          <ArrowLeft className="w-5 h-5" style={{ color: "#ffffffee", pointerEvents: "none" }} />
+        </button>
+        <button
+          ref={fwdBtnRef}
+          aria-label="Next page"
+          style={{
+            position: "fixed",
+            right: "12px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            zIndex: 9999,
+            width: "48px",
+            height: "48px",
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(255,255,255,0.25)",
+            border: "1px solid rgba(255,255,255,0.3)",
+            touchAction: "manipulation",
+            WebkitTapHighlightColor: "transparent",
+          }}
+        >
+          <ArrowLeft className="w-5 h-5 rotate-180" style={{ color: "#ffffffee", pointerEvents: "none" }} />
+        </button>
+      </>
+    )}
     </>
   );
 }
