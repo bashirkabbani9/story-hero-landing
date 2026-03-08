@@ -38,6 +38,7 @@ type Story = {
   status: string;
   created_at: string;
   delivered_at: string | null;
+  parent_rating: number | null;
 };
 
 
@@ -146,13 +147,8 @@ function getPrevWeek(yearWeek: string): string {
   return `${y}-W${w}`;
 }
 
-function isNew(storyId: string): boolean {
-  try {
-    const read = JSON.parse(localStorage.getItem("read-stories") || "[]");
-    return !read.includes(storyId);
-  } catch {
-    return false;
-  }
+function isNew(story: Story): boolean {
+  return story.parent_rating === null;
 }
 
 function StoryCard({ story, childName }: { story: Story; childName?: string }) {
@@ -234,7 +230,7 @@ function StoryCard({ story, childName }: { story: Story; childName?: string }) {
       )}
 
       {/* New badge */}
-      {isNew(story.id) && (
+      {isNew(story) && (
         <span className="absolute top-2 right-2 bg-accent text-accent-foreground text-xs font-bold px-2 py-0.5 rounded-full shadow z-20">
           New! ✨
         </span>

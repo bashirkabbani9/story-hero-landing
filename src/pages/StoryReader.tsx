@@ -662,14 +662,10 @@ export default function StoryReader() {
         if (childData?.age) setChildAge(childData.age);
       }
 
-      // Mark story as read in localStorage
-      try {
-        const read = JSON.parse(localStorage.getItem("read-stories") || "[]");
-        if (!read.includes(id)) {
-          read.push(id);
-          localStorage.setItem("read-stories", JSON.stringify(read));
-        }
-      } catch {}
+      // Mark story as opened (set parent_rating to 0 if null, so "New!" badge disappears across devices)
+      if (storyRes.data.parent_rating === null) {
+        supabase.from("stories").update({ parent_rating: 0 }).eq("id", id).then(() => {});
+      }
 
       setLoading(false);
     });

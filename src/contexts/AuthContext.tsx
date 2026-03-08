@@ -45,6 +45,7 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
 
     const handleSession = async (session: Session | null) => {
       if (done) return;
+      done = true; // set immediately to prevent race condition
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -54,7 +55,6 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
       } else {
         setChildProfiles([]);
       }
-      done = true;
       setLoading(false);
     };
 
@@ -72,11 +72,10 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
       handleSession(null);
     });
 
-    // Safety net — if not fully loaded in 4s, sign out and send to login
+    // Safety net — if not fully loaded in 4s, clear state and go to login
     const timeout = setTimeout(() => {
       if (!done) {
         done = true;
-        supabase.auth.signOut().catch(() => {});
         setUser(null);
         setSession(null);
         setChildProfiles([]);
