@@ -2,6 +2,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   ReactNode,
 } from "react";
@@ -41,9 +42,12 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
   };
 
   useEffect(() => {
+    const resolved = { current: false };
+
     // Set up auth state listener BEFORE getSession
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        resolved.current = true;
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
@@ -57,6 +61,7 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
 
     // Then get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      resolved.current = true;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -65,11 +70,19 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
         setLoading(false);
       }
     }).catch(() => {
+      resolved.current = true;
       setLoading(false);
     });
 
-    // Safety net — never stay stuck on loading screen (only for true hangs)
-    const timeout = setTimeout(() => setLoading(false), 10000);
+    // Safety net — if auth hasn't resolved in 4s, clear session and go to login
+    const timeout = setTimeout(() => {
+      if (!resolved.current) {
+        setUser(null);
+        setSession(null);
+        setChildProfiles([]);
+        setLoading(false);
+      }
+    }, 4000);
 
     return () => {
       subscription.unsubscribe();
