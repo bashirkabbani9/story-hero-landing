@@ -542,7 +542,7 @@ export default function Settings() {
       if (data.url) window.open(data.url, "_blank");
       else throw new Error("No URL returned");
     } catch {
-      toast({ title: "Something went wrong", description: "Please try again or email bashir@alkabbanisolutions.co.uk" });
+      toast({ title: "Something went wrong", description: "Please try again or email hello@littleherolibrary.com" });
     } finally {
       setLoadingPortal(false);
     }
