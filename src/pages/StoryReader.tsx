@@ -286,6 +286,175 @@ function StoryTextPage({
   );
 }
 
+// ─── Combined image+text page for mobile ────────────────────────────────────
+
+const StoryPageCombined = forwardRef<
+  HTMLDivElement,
+  {
+    text: string;
+    pageNumber: number;
+    illustrationUrl: string | null;
+    bedtime: boolean;
+    childAge: number | null;
+  }
+>(({ text, pageNumber, illustrationUrl, bedtime, childAge }, ref) => {
+  const textRef = useRef<HTMLDivElement>(null);
+  const baseFontSize = getTextFontSize(text, childAge, true);
+  const [fittedSize, setFittedSize] = useState(parseInt(baseFontSize));
+
+  const storyFontFamily =
+    childAge !== null && childAge >= 8 && childAge <= 12
+      ? "'Georgia', 'Baskerville Old Face', 'Garamond', serif"
+      : "'Andika', 'Century Gothic', 'Avenir', sans-serif";
+
+  useLayoutEffect(() => {
+    const el = textRef.current;
+    if (!el) return;
+    let size = parseInt(baseFontSize) + 4;
+    el.style.fontSize = size + "px";
+    while (el.scrollHeight > el.clientHeight && size > 13) {
+      size -= 1;
+      el.style.fontSize = size + "px";
+    }
+    setFittedSize(size);
+  }, [text, baseFontSize]);
+
+  const textColor = bedtime ? "#e8dcc8" : "#3D2E1F";
+  const dropCapColor = bedtime ? "#f5c56c" : "#7B5B2A";
+  const pageNumColor = bedtime ? "rgba(232,220,200,0.5)" : "rgba(61,46,31,0.4)";
+  const firstLetter = text.charAt(0);
+  const restOfText = text.slice(1);
+
+  const gradientOverlay = bedtime
+    ? "linear-gradient(to bottom, transparent 0%, transparent 40%, rgba(26,26,46,0.70) 55%, rgba(26,26,46,0.93) 70%, rgba(26,26,46,0.97) 100%)"
+    : "linear-gradient(to bottom, transparent 0%, transparent 40%, rgba(254,252,247,0.65) 55%, rgba(254,252,247,0.92) 70%, rgba(254,252,247,0.97) 100%)";
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "100%",
+        overflow: "hidden",
+        background: bedtime ? "#1a1a2e" : "#F5F0E8",
+      }}
+    >
+      {/* Full-bleed illustration */}
+      {illustrationUrl ? (
+        <img
+          src={illustrationUrl}
+          alt=""
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            objectPosition: "center top",
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: bedtime ? FALLBACK_GRADIENT_BEDTIME : FALLBACK_GRADIENT,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <span style={{ fontSize: "64px", opacity: 0.5 }}>✨</span>
+        </div>
+      )}
+
+      {/* Gradient overlay for text readability */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: gradientOverlay,
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Text overlay at bottom */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: "45%",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "flex-end",
+          padding: "0 24px 16px",
+        }}
+      >
+        <div
+          ref={textRef}
+          style={{
+            flex: 1,
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+          }}
+        >
+          <p
+            style={{
+              fontFamily: storyFontFamily,
+              fontWeight: 500,
+              fontSize: fittedSize + "px",
+              lineHeight: 1.7,
+              color: textColor,
+              textAlign: "left",
+              textShadow: bedtime
+                ? "0 1px 4px rgba(0,0,0,0.5)"
+                : "0 1px 3px rgba(254,252,247,0.7)",
+            }}
+          >
+            <span
+              style={{
+                float: "left",
+                fontFamily: "'Bubblegum Sans', cursive",
+                fontSize: `${Math.min(fittedSize * 2.5, 52)}px`,
+                lineHeight: 0.82,
+                color: dropCapColor,
+                marginRight: "5px",
+                marginTop: "2px",
+                textShadow: bedtime
+                  ? "0 2px 6px rgba(0,0,0,0.5)"
+                  : "0 1px 4px rgba(254,252,247,0.8)",
+              }}
+            >
+              {firstLetter}
+            </span>
+            {restOfText}
+          </p>
+        </div>
+
+        <div style={{ textAlign: "center", paddingTop: "8px" }}>
+          <span
+            style={{
+              color: pageNumColor,
+              fontFamily: "'Quicksand', sans-serif",
+              fontSize: "11px",
+              fontWeight: 700,
+            }}
+          >
+            — {pageNumber} —
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+});
+StoryPageCombined.displayName = "StoryPageCombined";
+
 // ─── Book page component (must use forwardRef for react-pageflip) ───────────
 
 interface BookPageProps {
@@ -315,8 +484,8 @@ const BookPage = forwardRef<HTMLDivElement, BookPageProps>(
               left: 0,
               width: "100%",
               height: "100%",
-              objectFit: "contain",
-              objectPosition: "center center",
+              objectFit: "cover",
+              objectPosition: "center top",
             }}
           />
         )}
@@ -816,27 +985,41 @@ export default function StoryReader() {
             clickEventForward={false}
             renderOnlyPageLengthChange={false}
           >
-            {/* ── STORY SPREADS (illustration page + text page) ── */}
-            {pages.filter(p => p.page_number > 0).flatMap((page) => [
-              /* Left page: full-bleed illustration */
-              <BookPage key={`${page.id}-art`} bgImage={page.illustration_url} bedtime={bedtime}>
-                {!page.illustration_url && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-6xl opacity-50">✨</span>
-                  </div>
-                )}
-              </BookPage>,
-              /* Right page: decorated text page */
-              <BookPage key={`${page.id}-text`} bgImage={null} bedtime={bedtime}>
-                <StoryTextPage
-                  text={page.text}
-                  pageNumber={page.page_number}
-                  bedtime={bedtime}
-                  childAge={childAge}
-                  isMobile={isMobile}
-                />
-              </BookPage>,
-            ])}
+            {/* ── STORY PAGES ── */}
+            {pages.filter(p => p.page_number > 0).flatMap((page) =>
+              isMobile
+                ? [
+                    /* Mobile: combined image + text on one page */
+                    <StoryPageCombined
+                      key={`${page.id}-combined`}
+                      text={page.text}
+                      pageNumber={page.page_number}
+                      illustrationUrl={page.illustration_url}
+                      bedtime={bedtime}
+                      childAge={childAge}
+                    />,
+                  ]
+                : [
+                    /* Desktop left: full-bleed illustration */
+                    <BookPage key={`${page.id}-art`} bgImage={page.illustration_url} bedtime={bedtime}>
+                      {!page.illustration_url && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-6xl opacity-50">✨</span>
+                        </div>
+                      )}
+                    </BookPage>,
+                    /* Desktop right: decorated text page */
+                    <BookPage key={`${page.id}-text`} bgImage={null} bedtime={bedtime}>
+                      <StoryTextPage
+                        text={page.text}
+                        pageNumber={page.page_number}
+                        bedtime={bedtime}
+                        childAge={childAge}
+                        isMobile={false}
+                      />
+                    </BookPage>,
+                  ]
+            )}
 
             {/* ── END PAGE ── */}
             <BookPage bgImage={pages[pages.length - 1]?.illustration_url ?? story.cover_image_url} bedtime={bedtime}>
