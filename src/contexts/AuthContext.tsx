@@ -68,8 +68,8 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
       setLoading(false);
     });
 
-    // Safety net — never stay stuck on loading screen
-    const timeout = setTimeout(() => setLoading(false), 4000);
+    // Safety net — never stay stuck on loading screen (only for true hangs)
+    const timeout = setTimeout(() => setLoading(false), 10000);
 
     return () => {
       subscription.unsubscribe();
