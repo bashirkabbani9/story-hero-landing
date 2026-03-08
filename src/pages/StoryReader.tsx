@@ -127,7 +127,15 @@ const FALLBACK_GRADIENT =
 const FALLBACK_GRADIENT_BEDTIME =
   "radial-gradient(ellipse at 30% 20%, #1a1a4e 0%, #2d2060 40%, #0d0d2a 100%)";
 
-// ─── Storybook text page component (right-hand page of a spread) ────────────
+// ─── Decorative text page (right-hand side of a picture book spread) ────────
+
+const PAGE_DECORATIONS = [
+  ["✨", "📖"],
+  ["🌙", "⭐"],
+  ["🍃", "🌸"],
+  ["🦋", "🌟"],
+  ["🌈", "💫"],
+];
 
 function StoryTextPage({
   text,
@@ -142,7 +150,7 @@ function StoryTextPage({
   childAge: number | null;
   isMobile: boolean;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
   const baseFontSize = getTextFontSize(text, childAge, isMobile);
   const [fittedSize, setFittedSize] = useState(parseInt(baseFontSize));
 
@@ -152,12 +160,11 @@ function StoryTextPage({
       : "'Andika', 'Century Gothic', 'Avenir', sans-serif";
 
   useLayoutEffect(() => {
-    const el = containerRef.current;
+    const el = textRef.current;
     if (!el) return;
-    // Start with a generous size since we have the full page for text
     let size = parseInt(baseFontSize) + 4;
     el.style.fontSize = size + "px";
-    while (el.scrollHeight > el.clientHeight && size > 12) {
+    while (el.scrollHeight > el.clientHeight && size > 13) {
       size -= 1;
       el.style.fontSize = size + "px";
     }
@@ -166,13 +173,14 @@ function StoryTextPage({
 
   const bgColor = bedtime ? "#1a1a2e" : "#FEFCF7";
   const textColor = bedtime ? "#e8dcc8" : "#3D2E1F";
-  const dropCapColor = bedtime ? "#f5c56c" : "#8B6914";
-  const pageNumColor = bedtime ? "rgba(232,220,200,0.35)" : "rgba(61,46,31,0.3)";
-  const borderColor = bedtime ? "rgba(245, 197, 108, 0.1)" : "rgba(180, 140, 80, 0.15)";
+  const dropCapColor = bedtime ? "#f5c56c" : "#7B5B2A";
+  const pageNumColor = bedtime ? "rgba(232,220,200,0.4)" : "rgba(61,46,31,0.35)";
+  const accentColor = bedtime ? "rgba(245, 197, 108, 0.12)" : "rgba(180, 140, 80, 0.1)";
+  const dotColor = bedtime ? "rgba(245, 197, 108, 0.2)" : "rgba(180, 140, 80, 0.25)";
 
-  // Split text into drop cap (first letter) and rest
   const firstLetter = text.charAt(0);
   const restOfText = text.slice(1);
+  const [decoLeft, decoRight] = PAGE_DECORATIONS[(pageNumber - 1) % PAGE_DECORATIONS.length];
 
   return (
     <div
@@ -182,30 +190,41 @@ function StoryTextPage({
         background: bgColor,
         display: "flex",
         flexDirection: "column",
-        justifyContent: "center",
-        padding: isMobile ? "32px 24px 20px" : "40px 36px 24px",
+        overflow: "hidden",
       }}
     >
-      {/* Subtle decorative top border */}
-      <div
-        style={{
-          position: "absolute",
-          top: isMobile ? "16px" : "24px",
-          left: isMobile ? "20px" : "32px",
-          right: isMobile ? "20px" : "32px",
-          height: "1px",
-          background: `linear-gradient(to right, transparent, ${borderColor}, transparent)`,
-        }}
-      />
+      {/* ── Decorative dots along top ── */}
+      <div style={{ display: "flex", justifyContent: "center", gap: isMobile ? "10px" : "14px", padding: isMobile ? "12px 0 0" : "18px 0 0" }}>
+        {Array.from({ length: isMobile ? 7 : 9 }).map((_, i) => (
+          <div
+            key={i}
+            style={{
+              width: i % 3 === 1 ? "7px" : "5px",
+              height: i % 3 === 1 ? "7px" : "5px",
+              borderRadius: "50%",
+              background: dotColor,
+            }}
+          />
+        ))}
+      </div>
 
-      {/* Text area */}
+      {/* ── Corner decorations ── */}
+      <span style={{ position: "absolute", top: isMobile ? "8px" : "14px", left: isMobile ? "12px" : "20px", fontSize: isMobile ? "14px" : "18px", opacity: 0.5 }}>
+        {decoLeft}
+      </span>
+      <span style={{ position: "absolute", top: isMobile ? "8px" : "14px", right: isMobile ? "12px" : "20px", fontSize: isMobile ? "14px" : "18px", opacity: 0.5 }}>
+        {decoRight}
+      </span>
+
+      {/* ── Main text area ── */}
       <div
-        ref={containerRef}
+        ref={textRef}
         style={{
           flex: 1,
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
+          padding: isMobile ? "8px 22px 4px" : "12px 34px 8px",
           overflow: "hidden",
         }}
       >
@@ -214,7 +233,7 @@ function StoryTextPage({
             fontFamily: storyFontFamily,
             fontWeight: 500,
             fontSize: fittedSize + "px",
-            lineHeight: 1.8,
+            lineHeight: 1.85,
             color: textColor,
             textAlign: "left",
           }}
@@ -224,11 +243,12 @@ function StoryTextPage({
             style={{
               float: "left",
               fontFamily: "'Bubblegum Sans', cursive",
-              fontSize: `${fittedSize * 3}px`,
-              lineHeight: 0.8,
+              fontSize: `${Math.min(fittedSize * 3, 64)}px`,
+              lineHeight: 0.82,
               color: dropCapColor,
               marginRight: "6px",
-              marginTop: "4px",
+              marginTop: "3px",
+              textShadow: bedtime ? "none" : "1px 1px 2px rgba(123, 91, 42, 0.15)",
             }}
           >
             {firstLetter}
@@ -237,34 +257,31 @@ function StoryTextPage({
         </p>
       </div>
 
-      {/* Subtle decorative bottom border */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: isMobile ? "16px" : "24px",
-          left: isMobile ? "20px" : "32px",
-          right: isMobile ? "20px" : "32px",
-          height: "1px",
-          background: `linear-gradient(to right, transparent, ${borderColor}, transparent)`,
-        }}
-      />
+      {/* ── Decorative bottom section ── */}
+      <div style={{ padding: isMobile ? "0 22px 10px" : "0 34px 16px", textAlign: "center" }}>
+        {/* Decorative divider */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginBottom: "6px" }}>
+          <div style={{ flex: 1, maxWidth: "60px", height: "1px", background: `linear-gradient(to right, transparent, ${accentColor})` }} />
+          <span style={{ fontSize: "12px", opacity: 0.4 }}>✦</span>
+          <div style={{ flex: 1, maxWidth: "60px", height: "1px", background: `linear-gradient(to left, transparent, ${accentColor})` }} />
+        </div>
 
-      {/* Page number */}
-      <span
-        style={{
-          position: "absolute",
-          bottom: isMobile ? "22px" : "30px",
-          left: 0,
-          right: 0,
-          textAlign: "center",
-          color: pageNumColor,
-          fontFamily: "'Quicksand', sans-serif",
-          fontSize: "12px",
-          fontWeight: 600,
-        }}
-      >
-        {pageNumber}
-      </span>
+        {/* Bottom decorations + page number */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: isMobile ? "8px" : "12px" }}>
+          <span style={{ fontSize: isMobile ? "12px" : "14px", opacity: 0.4 }}>{decoRight}</span>
+          <span
+            style={{
+              color: pageNumColor,
+              fontFamily: "'Quicksand', sans-serif",
+              fontSize: "12px",
+              fontWeight: 700,
+            }}
+          >
+            — {pageNumber} —
+          </span>
+          <span style={{ fontSize: isMobile ? "12px" : "14px", opacity: 0.4 }}>{decoLeft}</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -799,7 +816,7 @@ export default function StoryReader() {
             clickEventForward={false}
             renderOnlyPageLengthChange={false}
           >
-            {/* ── STORY SPREADS (illustration page + text page per spread) ── */}
+            {/* ── STORY SPREADS (illustration page + text page) ── */}
             {pages.filter(p => p.page_number > 0).flatMap((page) => [
               /* Left page: full-bleed illustration */
               <BookPage key={`${page.id}-art`} bgImage={page.illustration_url} bedtime={bedtime}>
@@ -809,7 +826,7 @@ export default function StoryReader() {
                   </div>
                 )}
               </BookPage>,
-              /* Right page: text on cream/dark background */
+              /* Right page: decorated text page */
               <BookPage key={`${page.id}-text`} bgImage={null} bedtime={bedtime}>
                 <StoryTextPage
                   text={page.text}
