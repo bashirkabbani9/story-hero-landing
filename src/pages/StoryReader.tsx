@@ -341,7 +341,7 @@ const StoryPageCombined = forwardRef<
         background: bedtime ? "#1a1a2e" : "#F5F0E8",
       }}
     >
-      {/* Full-bleed illustration (slightly zoomed out to show more of the scene) */}
+      {/* Full-bleed illustration (positioned to focus on the character area) */}
       {illustrationUrl ? (
         <img
           src={illustrationUrl}
@@ -353,9 +353,7 @@ const StoryPageCombined = forwardRef<
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            objectPosition: "center top",
-            transform: "scale(0.92)",
-            transformOrigin: "top center",
+            objectPosition: "center 35%",
           }}
         />
       ) : (
@@ -627,8 +625,12 @@ export default function StoryReader() {
   }, []);
 
   const goBack = useCallback(() => {
+    if (currentPage === 0) {
+      setBookOpened(false);
+      return;
+    }
     flipBookRef.current?.pageFlip()?.flipPrev();
-  }, []);
+  }, [currentPage]);
 
   // ── Touch / swipe for mobile ──
   const handleTouchStart = (e: React.TouchEvent) => {
