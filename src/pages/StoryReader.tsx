@@ -127,35 +127,24 @@ const FALLBACK_GRADIENT =
 const FALLBACK_GRADIENT_BEDTIME =
   "radial-gradient(ellipse at 30% 20%, #1a1a4e 0%, #2d2060 40%, #0d0d2a 100%)";
 
-// ─── Layout types for text overlays ─────────────────────────────────────────
+// ─── Storybook text page component (right-hand page of a spread) ────────────
 
-const OVERLAY_LAYOUTS = ["parchment", "frosted", "gradient"] as const;
-type OverlayLayout = (typeof OVERLAY_LAYOUTS)[number];
-
-function getOverlayLayout(pageNumber: number): OverlayLayout {
-  return OVERLAY_LAYOUTS[(pageNumber - 1) % 3];
-}
-
-// ─── Storybook text overlay component ───────────────────────────────────────
-
-function StoryTextOverlay({
+function StoryTextPage({
   text,
   pageNumber,
-  layoutType,
   bedtime,
   childAge,
   isMobile,
 }: {
   text: string;
   pageNumber: number;
-  layoutType: OverlayLayout;
   bedtime: boolean;
   childAge: number | null;
   isMobile: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const fontSize = getTextFontSize(text, childAge, isMobile);
-  const [fittedSize, setFittedSize] = useState(parseInt(fontSize));
+  const baseFontSize = getTextFontSize(text, childAge, isMobile);
+  const [fittedSize, setFittedSize] = useState(parseInt(baseFontSize));
 
   const storyFontFamily =
     childAge !== null && childAge >= 8 && childAge <= 12
@@ -165,94 +154,113 @@ function StoryTextOverlay({
   useLayoutEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    let size = parseInt(fontSize);
+    // Start with a generous size since we have the full page for text
+    let size = parseInt(baseFontSize) + 4;
     el.style.fontSize = size + "px";
-    while (el.scrollHeight > el.clientHeight && size > 11) {
+    while (el.scrollHeight > el.clientHeight && size > 12) {
       size -= 1;
       el.style.fontSize = size + "px";
     }
     setFittedSize(size);
-  }, [text, fontSize]);
+  }, [text, baseFontSize]);
 
-  // Layout-specific styles
-  const isGradient = layoutType === "gradient";
+  const bgColor = bedtime ? "#1a1a2e" : "#FEFCF7";
+  const textColor = bedtime ? "#e8dcc8" : "#3D2E1F";
+  const dropCapColor = bedtime ? "#f5c56c" : "#8B6914";
+  const pageNumColor = bedtime ? "rgba(232,220,200,0.35)" : "rgba(61,46,31,0.3)";
+  const borderColor = bedtime ? "rgba(245, 197, 108, 0.1)" : "rgba(180, 140, 80, 0.15)";
 
-  const overlayStyle: React.CSSProperties = (() => {
-    const base: React.CSSProperties = {
-      position: "absolute",
-      bottom: 0,
-      left: 0,
-      right: 0,
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "flex-end",
-      padding: isGradient
-        ? (isMobile ? "40px 20px 14px" : "48px 28px 16px")
-        : (isMobile ? "16px 20px 14px" : "20px 28px 16px"),
-      overflow: "hidden",
-      minHeight: "28%",
-      maxHeight: "45%",
-    };
-
-    if (layoutType === "parchment") {
-      return {
-        ...base,
-        background: bedtime ? "rgba(26, 26, 46, 0.92)" : "rgba(254, 252, 247, 0.9)",
-        borderTop: bedtime ? "2px solid rgba(245, 197, 108, 0.25)" : "2px solid rgba(180, 140, 80, 0.3)",
-        borderRadius: "16px 16px 0 0",
-        boxShadow: "0 -4px 20px rgba(0, 0, 0, 0.15)",
-      };
-    }
-
-    if (layoutType === "frosted") {
-      return {
-        ...base,
-        background: bedtime ? "rgba(26, 26, 46, 0.78)" : "rgba(254, 252, 247, 0.68)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        borderTop: bedtime ? "1px solid rgba(245, 197, 108, 0.15)" : "1px solid rgba(255, 255, 255, 0.4)",
-      };
-    }
-
-    // gradient
-    return {
-      ...base,
-      background: bedtime
-        ? "linear-gradient(to top, rgba(13,13,26,0.85) 0%, rgba(13,13,26,0.5) 55%, transparent 100%)"
-        : "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.35) 55%, transparent 100%)",
-      minHeight: "35%",
-    };
-  })();
-
-  const textStyle: React.CSSProperties = {
-    fontFamily: storyFontFamily,
-    fontWeight: 500,
-    fontSize: fittedSize + "px",
-    lineHeight: 1.65,
-    textAlign: "left",
-    color: isGradient
-      ? (bedtime ? "#f5c56c" : "#ffffff")
-      : (bedtime ? "#e8dcc8" : "#3D2E1F"),
-    textShadow: isGradient ? "2px 2px 8px rgba(0,0,0,0.7)" : "none",
-  };
-
-  const pageNumColor = isGradient
-    ? "rgba(255,255,255,0.35)"
-    : (bedtime ? "rgba(232,220,200,0.35)" : "rgba(61,46,31,0.3)");
+  // Split text into drop cap (first letter) and rest
+  const firstLetter = text.charAt(0);
+  const restOfText = text.slice(1);
 
   return (
-    <div ref={containerRef} style={overlayStyle}>
-      <p style={textStyle}>{text}</p>
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        background: bgColor,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        padding: isMobile ? "32px 24px 20px" : "40px 36px 24px",
+      }}
+    >
+      {/* Subtle decorative top border */}
+      <div
+        style={{
+          position: "absolute",
+          top: isMobile ? "16px" : "24px",
+          left: isMobile ? "20px" : "32px",
+          right: isMobile ? "20px" : "32px",
+          height: "1px",
+          background: `linear-gradient(to right, transparent, ${borderColor}, transparent)`,
+        }}
+      />
+
+      {/* Text area */}
+      <div
+        ref={containerRef}
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          overflow: "hidden",
+        }}
+      >
+        <p
+          style={{
+            fontFamily: storyFontFamily,
+            fontWeight: 500,
+            fontSize: fittedSize + "px",
+            lineHeight: 1.8,
+            color: textColor,
+            textAlign: "left",
+          }}
+        >
+          {/* Drop cap */}
+          <span
+            style={{
+              float: "left",
+              fontFamily: "'Bubblegum Sans', cursive",
+              fontSize: `${fittedSize * 3}px`,
+              lineHeight: 0.8,
+              color: dropCapColor,
+              marginRight: "6px",
+              marginTop: "4px",
+            }}
+          >
+            {firstLetter}
+          </span>
+          {restOfText}
+        </p>
+      </div>
+
+      {/* Subtle decorative bottom border */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: isMobile ? "16px" : "24px",
+          left: isMobile ? "20px" : "32px",
+          right: isMobile ? "20px" : "32px",
+          height: "1px",
+          background: `linear-gradient(to right, transparent, ${borderColor}, transparent)`,
+        }}
+      />
+
+      {/* Page number */}
       <span
         style={{
-          display: "block",
+          position: "absolute",
+          bottom: isMobile ? "22px" : "30px",
+          left: 0,
+          right: 0,
           textAlign: "center",
           color: pageNumColor,
           fontFamily: "'Quicksand', sans-serif",
-          fontSize: "11px",
+          fontSize: "12px",
           fontWeight: 600,
-          marginTop: "8px",
-          flexShrink: 0,
         }}
       >
         {pageNumber}
@@ -791,19 +799,27 @@ export default function StoryReader() {
             clickEventForward={false}
             renderOnlyPageLengthChange={false}
           >
-            {/* ── STORY PAGES (full-bleed illustration + text overlay) ── */}
-            {pages.filter(p => p.page_number > 0).map((page) => (
-              <BookPage key={page.id} bgImage={page.illustration_url} bedtime={bedtime}>
-                <StoryTextOverlay
+            {/* ── STORY SPREADS (illustration page + text page per spread) ── */}
+            {pages.filter(p => p.page_number > 0).flatMap((page) => [
+              /* Left page: full-bleed illustration */
+              <BookPage key={`${page.id}-art`} bgImage={page.illustration_url} bedtime={bedtime}>
+                {!page.illustration_url && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-6xl opacity-50">✨</span>
+                  </div>
+                )}
+              </BookPage>,
+              /* Right page: text on cream/dark background */
+              <BookPage key={`${page.id}-text`} bgImage={null} bedtime={bedtime}>
+                <StoryTextPage
                   text={page.text}
                   pageNumber={page.page_number}
-                  layoutType={getOverlayLayout(page.page_number)}
                   bedtime={bedtime}
                   childAge={childAge}
                   isMobile={isMobile}
                 />
-              </BookPage>
-            ))}
+              </BookPage>,
+            ])}
 
             {/* ── END PAGE ── */}
             <BookPage bgImage={pages[pages.length - 1]?.illustration_url ?? story.cover_image_url} bedtime={bedtime}>
