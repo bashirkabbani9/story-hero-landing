@@ -162,9 +162,9 @@ function StoryTextPage({
   useLayoutEffect(() => {
     const el = textRef.current;
     if (!el) return;
-    let size = parseInt(baseFontSize) + 4;
+    let size = parseInt(baseFontSize) + 6;
     el.style.fontSize = size + "px";
-    while (el.scrollHeight > el.clientHeight && size > 13) {
+    while (el.scrollHeight > el.clientHeight && size > 14) {
       size -= 1;
       el.style.fontSize = size + "px";
     }
@@ -315,8 +315,8 @@ const BookPage = forwardRef<HTMLDivElement, BookPageProps>(
               left: 0,
               width: "100%",
               height: "100%",
-              objectFit: "cover",
-              objectPosition: "center top",
+              objectFit: "contain",
+              objectPosition: "center center",
             }}
           />
         )}
@@ -330,11 +330,11 @@ BookPage.displayName = "BookPage";
 // ─── Age-adaptive font sizing ───────────────────────────────────────────────
 
 function getAgeFontSize(age: number | null, isMobile: boolean): { base: number; min: number } {
-  if (age !== null && age >= 3 && age <= 4) return { base: isMobile ? 20 : 24, min: 12 };
-  if (age !== null && age >= 5 && age <= 6) return { base: isMobile ? 18 : 22, min: 12 };
-  if (age !== null && age >= 7 && age <= 8) return { base: isMobile ? 16 : 20, min: 12 };
-  if (age !== null && age >= 9 && age <= 12) return { base: isMobile ? 14 : 18, min: 12 };
-  return { base: isMobile ? 18 : 22, min: 12 };
+  if (age !== null && age >= 3 && age <= 4) return { base: isMobile ? 22 : 27, min: 14 };
+  if (age !== null && age >= 5 && age <= 6) return { base: isMobile ? 20 : 25, min: 14 };
+  if (age !== null && age >= 7 && age <= 8) return { base: isMobile ? 18 : 23, min: 13 };
+  if (age !== null && age >= 9 && age <= 12) return { base: isMobile ? 16 : 20, min: 13 };
+  return { base: isMobile ? 20 : 25, min: 14 };
 }
 
 function getTextFontSize(text: string, age: number | null, isMobile: boolean): string {
