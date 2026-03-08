@@ -891,6 +891,28 @@ export default function StoryReader() {
 
   // ── OPENED BOOK (flip book without cover page) ──
   return (
+    <>
+      {/* ── Mobile nav arrows — rendered OUTSIDE the flipbook container to avoid touch event conflicts ── */}
+      {isMobile && (
+        <>
+          <button
+            onPointerUp={(e) => { e.stopPropagation(); e.preventDefault(); goBack(); }}
+            className="fixed left-3 top-1/2 -translate-y-1/2 z-[60] w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md active:scale-90"
+            style={{ background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.25)" }}
+            aria-label="Previous page"
+          >
+            <ArrowLeft className="w-5 h-5" style={{ color: "#ffffffee" }} />
+          </button>
+          <button
+            onPointerUp={(e) => { e.stopPropagation(); e.preventDefault(); goForward(); }}
+            className="fixed right-3 top-1/2 -translate-y-1/2 z-[60] w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md active:scale-90"
+            style={{ background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.25)" }}
+            aria-label="Next page"
+          >
+            <ArrowLeft className="w-5 h-5 rotate-180" style={{ color: "#ffffffee" }} />
+          </button>
+        </>
+      )}
     <div
       ref={containerRef}
       className="fixed inset-0 flex items-center justify-center overflow-hidden select-none"
@@ -925,28 +947,6 @@ export default function StoryReader() {
           <X className="w-5 h-5" style={{ color: "#ffffffcc" }} />
         </button>
       </div>
-
-      {/* ── Mobile nav arrows ── */}
-      {isMobile && (
-        <>
-          <button
-            onClick={(e) => { e.stopPropagation(); goBack(); }}
-            className="fixed left-3 top-1/2 -translate-y-1/2 z-[60] w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md active:scale-90"
-            style={{ background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.25)" }}
-            aria-label="Previous page"
-          >
-            <ArrowLeft className="w-5 h-5" style={{ color: "#ffffffee" }} />
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); goForward(); }}
-            className="fixed right-3 top-1/2 -translate-y-1/2 z-[60] w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md active:scale-90"
-            style={{ background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.25)" }}
-            aria-label="Next page"
-          >
-            <ArrowLeft className="w-5 h-5 rotate-180" style={{ color: "#ffffffee" }} />
-          </button>
-        </>
-      )}
 
       {/* ── Book container ── */}
       <div
@@ -1042,5 +1042,6 @@ export default function StoryReader() {
         )}
       </div>
     </div>
+    </>
   );
 }
