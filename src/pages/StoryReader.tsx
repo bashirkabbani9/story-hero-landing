@@ -662,6 +662,15 @@ export default function StoryReader() {
         if (childData?.age) setChildAge(childData.age);
       }
 
+      // Mark story as read in localStorage
+      try {
+        const read = JSON.parse(localStorage.getItem("read-stories") || "[]");
+        if (!read.includes(id)) {
+          read.push(id);
+          localStorage.setItem("read-stories", JSON.stringify(read));
+        }
+      } catch {}
+
       setLoading(false);
     });
   }, [id]);

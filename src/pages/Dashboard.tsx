@@ -146,8 +146,13 @@ function getPrevWeek(yearWeek: string): string {
   return `${y}-W${w}`;
 }
 
-function isNew(dateStr: string): boolean {
-  return Date.now() - new Date(dateStr).getTime() < 7 * 24 * 60 * 60 * 1000;
+function isNew(storyId: string): boolean {
+  try {
+    const read = JSON.parse(localStorage.getItem("read-stories") || "[]");
+    return !read.includes(storyId);
+  } catch {
+    return false;
+  }
 }
 
 function StoryCard({ story, childName }: { story: Story; childName?: string }) {
@@ -229,7 +234,7 @@ function StoryCard({ story, childName }: { story: Story; childName?: string }) {
       )}
 
       {/* New badge */}
-      {isNew(deliveryDate) && (
+      {isNew(story.id) && (
         <span className="absolute top-2 right-2 bg-accent text-accent-foreground text-xs font-bold px-2 py-0.5 rounded-full shadow z-20">
           New! ✨
         </span>
