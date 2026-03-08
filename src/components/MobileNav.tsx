@@ -1,10 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { LayoutDashboard, BookOpen, Settings } from "lucide-react";
+import { BookOpen, Settings } from "lucide-react";
 
 const navItems = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/stories",   label: "Stories",   icon: BookOpen },
+  { to: "/dashboard", label: "Library", icon: BookOpen },
   { to: "/settings",  label: "Settings",  icon: Settings },
 ];
 
