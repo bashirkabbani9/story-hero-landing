@@ -47,7 +47,7 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          await fetchChildren(session.user.id);
+          try { await fetchChildren(session.user.id); } catch {}
         } else {
           setChildProfiles([]);
         }
@@ -60,13 +60,21 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchChildren(session.user.id).then(() => setLoading(false));
+        fetchChildren(session.user.id).catch(() => {}).finally(() => setLoading(false));
       } else {
         setLoading(false);
       }
+    }).catch(() => {
+      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Safety net — never stay stuck on loading screen
+    const timeout = setTimeout(() => setLoading(false), 4000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
   const signOut = async () => {
