@@ -2,7 +2,6 @@ import {
   createContext,
   useContext,
   useEffect,
-  useRef,
   useState,
   ReactNode,
 } from "react";
@@ -13,7 +12,6 @@ type AuthContextType = {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  childrenLoaded: boolean;
   children: Child[];
   hasChildren: boolean;
   refreshChildren: () => Promise<void>;
@@ -27,7 +25,6 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [childProfiles, setChildProfiles] = useState<Child[]>([]);
-  const [childrenLoaded, setChildrenLoaded] = useState(false);
 
   const fetchChildren = async (userId: string) => {
     const { data, error } = await supabase
@@ -37,7 +34,6 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
     if (!error) {
       setChildProfiles(data ?? []);
     }
-    setChildrenLoaded(true);
   };
 
   const refreshChildren = async () => {
@@ -45,20 +41,20 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
   };
 
   useEffect(() => {
-    let handled = false;
+    let done = false;
 
-    const handleSession = (session: Session | null) => {
-      if (handled) return;
-      handled = true;
+    const handleSession = async (session: Session | null) => {
+      if (done) return;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        // Fetch children in the background — don't block loading
-        fetchChildren(session.user.id).catch(() => setChildrenLoaded(true));
+        try {
+          await fetchChildren(session.user.id);
+        } catch {}
       } else {
         setChildProfiles([]);
-        setChildrenLoaded(true);
       }
+      done = true;
       setLoading(false);
     };
 
@@ -76,9 +72,16 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
       handleSession(null);
     });
 
-    // Safety net — unconditionally stop loading after 4s
+    // Safety net — if not fully loaded in 4s, sign out and send to login
     const timeout = setTimeout(() => {
-      setLoading(false);
+      if (!done) {
+        done = true;
+        supabase.auth.signOut().catch(() => {});
+        setUser(null);
+        setSession(null);
+        setChildProfiles([]);
+        setLoading(false);
+      }
     }, 4000);
 
     return () => {
@@ -97,7 +100,6 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
         user,
         session,
         loading,
-        childrenLoaded,
         children: childProfiles,
         hasChildren: childProfiles.length > 0,
         refreshChildren,
