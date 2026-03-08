@@ -42,46 +42,39 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
   };
 
   useEffect(() => {
-    const resolved = { current: false };
+    let handled = false;
+
+    const handleSession = (session: Session | null) => {
+      if (handled) return;
+      handled = true;
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        // Fetch children in the background — don't block loading
+        fetchChildren(session.user.id).catch(() => {});
+      } else {
+        setChildProfiles([]);
+      }
+      setLoading(false);
+    };
 
     // Set up auth state listener BEFORE getSession
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        resolved.current = true;
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          try { await fetchChildren(session.user.id); } catch {}
-        } else {
-          setChildProfiles([]);
-        }
-        setLoading(false);
+      (_event, session) => {
+        handleSession(session);
       }
     );
 
     // Then get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      resolved.current = true;
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchChildren(session.user.id).catch(() => {}).finally(() => setLoading(false));
-      } else {
-        setLoading(false);
-      }
+      handleSession(session);
     }).catch(() => {
-      resolved.current = true;
-      setLoading(false);
+      handleSession(null);
     });
 
-    // Safety net — if auth hasn't resolved in 4s, clear session and go to login
+    // Safety net — unconditionally stop loading after 4s
     const timeout = setTimeout(() => {
-      if (!resolved.current) {
-        setUser(null);
-        setSession(null);
-        setChildProfiles([]);
-        setLoading(false);
-      }
+      setLoading(false);
     }, 4000);
 
     return () => {
