@@ -90,6 +90,10 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
   }, []);
 
   const signOut = async () => {
+    // Clear state immediately so UI redirects before Supabase round-trip
+    setUser(null);
+    setSession(null);
+    setChildProfiles([]);
     await supabase.auth.signOut();
   };
 
