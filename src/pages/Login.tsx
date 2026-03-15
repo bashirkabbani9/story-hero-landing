@@ -1,12 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Moon, Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSEO } from "@/hooks/useSEO";
 
 export default function Login() {
+  useSEO({
+    title: "Sign In",
+    description:
+      "Sign in to Little Hero Library to access your child's personalised bedtime stories.",
+    canonical: "/login",
+  });
   const navigate = useNavigate();
-  const { refreshChildren } = useAuth();
+  const { user, hasChildren } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -14,12 +21,19 @@ export default function Login() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Redirect once AuthContext detects the session (works for both email and OAuth)
+  useEffect(() => {
+    if (user) {
+      navigate(hasChildren ? "/dashboard" : "/onboarding", { replace: true });
+    }
+  }, [user, hasChildren, navigate]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       setError(error.message);
@@ -27,18 +41,8 @@ export default function Login() {
       return;
     }
 
-    if (data.user) {
-      // Check if user has children
-      const { data: children } = await supabase
-        .from("children")
-        .select("id")
-        .eq("profile_id", data.user.id)
-        .limit(1);
-
-      await refreshChildren();
-      navigate(children && children.length > 0 ? "/dashboard" : "/onboarding", { replace: true });
-    }
-    setLoading(false);
+    // Don't navigate here — the useEffect above will handle it
+    // once AuthContext.onAuthStateChange fires and sets user
   };
 
   const handleGoogleLogin = async () => {
