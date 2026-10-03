@@ -1,8 +1,20 @@
 import { createClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = "https://giklfzxmoydzstpirfcb.supabase.co";
-const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdpa2xmenhtb3lkenN0cGlyZmNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNzMzMzMsImV4cCI6MjA4Njg0OTMzM30.6XEoNstpfFsY4d7mKTTQVDoP9SMOIrqUUm4VbggbXRA";
+// Read from the environment, never hardcode. The publishable key is safe to ship in the
+// bundle by design, but a key pinned in source cannot be rotated without a code change,
+// and that is what made the October 2026 rotation break the live site.
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  // Fail loudly at startup. A missing key used to surface much later as a broken
+  // login screen, which is far harder to diagnose than a blank page with this message.
+  throw new Error(
+    "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY. " +
+      "Locally that means a .env.local file (copy .env.example), and on Vercel it means the " +
+      "project's Environment Variables, followed by a redeploy."
+  );
+}
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 

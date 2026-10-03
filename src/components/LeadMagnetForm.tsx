@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Sparkles, Loader2 } from "lucide-react";
+import { WEBHOOKS } from "@/lib/config";
 
 export default function LeadMagnetForm() {
   const [formData, setFormData] = useState({
@@ -16,7 +17,7 @@ export default function LeadMagnetForm() {
     setErrorMsg("");
 
     try {
-      const response = await fetch("https://bashk1.app.n8n.cloud/webhook/lead-magnet", {
+      const response = await fetch(WEBHOOKS.leadMagnet, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -69,7 +70,7 @@ export default function LeadMagnetForm() {
             <span className="text-primary text-sm font-medium">Free for a limited time</span>
           </div>
           <h2 className="font-display text-3xl sm:text-4xl font-bold text-foreground mb-3">
-            Get Your Child's First Story — Free
+            Get Your Child's First Story, Free
           </h2>
           <p className="text-muted-foreground text-lg">
             Enter a few details and we'll send a personalised story straight to your inbox.
