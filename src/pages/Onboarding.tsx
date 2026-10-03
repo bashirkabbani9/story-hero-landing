@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { ChevronLeft, Loader2, Star, Moon, Sparkles } from "lucide-react";
+import { MAX_CHILDREN_PER_ACCOUNT } from "@/lib/config";
 
 const TOTAL_STEPS = 6;
 
@@ -80,7 +81,7 @@ type OnboardingData = {
 };
 
 export default function Onboarding() {
-  const { user, refreshChildren } = useAuth();
+  const { user, children: existingChildren, refreshChildren } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -134,7 +135,7 @@ export default function Onboarding() {
   };
 
   const handleSubmit = async () => {
-    if (!user) return;
+    if (!user || submitting) return;
     setSubmitting(true);
     setError("");
 
@@ -154,7 +155,17 @@ export default function Onboarding() {
     });
 
     if (insertError) {
-      setError(insertError.message);
+      // The only thing the children insert policy checks beyond ownership is the count,
+      // and profile_id always comes from the signed in user, so a 42501 here means the
+      // account is at its limit rather than anything the parent can fix by retrying.
+      const atLimit =
+        insertError.code === "42501" ||
+        insertError.message.includes("row-level security");
+      setError(
+        atLimit
+          ? `You can have up to ${MAX_CHILDREN_PER_ACCOUNT} children on one account. Remove one in Settings to add another.`
+          : insertError.message
+      );
       setStep(TOTAL_STEPS);
       setSubmitting(false);
       return;
@@ -172,11 +183,51 @@ export default function Onboarding() {
     if (step === 1) return data.name.trim().length > 0;
     if (step === 2) return data.age !== null;
     if (step === 3) return data.gender !== "";
-    if (step === 4) return data.appearance.skinTone !== "" && data.appearance.hairColour !== "";
+    if (step === 4) {
+      // All four are required. The illustration prompt uses every one of them, and a blank
+      // field means DALL-E invents that feature differently on each of the six pages.
+      const a = data.appearance;
+      return (
+        a.skinTone !== "" && a.hairColour !== "" && a.hairStyle !== "" && a.eyeColour !== ""
+      );
+    }
     if (step === 5) return data.interests.length > 0;
     if (step === 6) return data.language !== "";
     return false;
   };
+
+  // Already at the limit, so do not walk them through six steps to a refusal at the end.
+  // The database policy is the real enforcement, this just stops the wasted journey.
+  if (existingChildren.length >= MAX_CHILDREN_PER_ACCOUNT) {
+    return (
+      <div className="min-h-screen gradient-hero flex flex-col items-center justify-center px-4 py-8">
+        <div className="w-full max-w-md text-center space-y-5">
+          <Sparkles className="w-8 h-8 text-amber-warm mx-auto" />
+          <h1 className="font-display text-2xl font-bold text-primary-foreground">
+            You already have {existingChildren.length} children on this account
+          </h1>
+          <p className="text-primary-foreground/80">
+            One account covers up to {MAX_CHILDREN_PER_ACCOUNT}. Remove a child in Settings if you
+            want to add a different one.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <Link
+              to="/dashboard"
+              className="flex-1 gradient-amber text-accent-foreground font-semibold py-3 rounded-xl"
+            >
+              Go to dashboard
+            </Link>
+            <Link
+              to="/settings"
+              className="flex-1 py-3 rounded-xl border-2 border-primary-foreground/20 text-primary-foreground font-medium"
+            >
+              Settings
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen gradient-hero flex flex-col px-4 py-8">
@@ -192,6 +243,18 @@ export default function Onboarding() {
       </div>
 
       <div className="w-full max-w-lg mx-auto flex flex-col flex-1">
+        {/* A parent adding a second child can leave. A brand new account cannot, because
+            ProtectedRoute sends them straight back here until they have one. */}
+        {existingChildren.length > 0 && (
+          <Link
+            to="/dashboard"
+            className="self-start mb-4 flex items-center gap-1.5 text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back to dashboard
+          </Link>
+        )}
+
         {/* Progress bar */}
         {step <= TOTAL_STEPS && (
           <div className="mb-8">

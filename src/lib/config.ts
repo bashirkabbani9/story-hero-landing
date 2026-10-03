@@ -16,3 +16,8 @@ export const WEBHOOKS = {
   customerPortal: `${N8N_WEBHOOK_BASE}/customer-portal`,
   leadMagnet: `${N8N_WEBHOOK_BASE}/lead-magnet`,
 } as const;
+
+// Product rule, set 2026-10-03. Enforced in the database by the children insert policy,
+// see projects/little-hero-library/children-limit.sql. This constant exists so the
+// message the parent reads and the rule the database applies stay the same number.
+export const MAX_CHILDREN_PER_ACCOUNT = 2;
