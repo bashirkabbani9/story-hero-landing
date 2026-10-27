@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { ChevronLeft, Loader2, Star, Moon, Sparkles } from "lucide-react";
 import { MAX_CHILDREN_PER_ACCOUNT } from "@/lib/config";
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 5;
 
 const SKIN_TONES = [
   { hex: "#FDEBD0", desc: "fair skin" },
@@ -54,16 +54,6 @@ const INTERESTS = [
   { label: "Ocean", emoji: "🌊" },
 ];
 
-const LANGUAGES = [
-  { label: "English (British)", value: "en-GB" },
-  { label: "Arabic (العربية)", value: "ar" },
-  { label: "French (Français)", value: "fr" },
-  { label: "Spanish (Español)", value: "es" },
-  { label: "Urdu (اردو)", value: "ur" },
-  { label: "Turkish (Türkçe)", value: "tr" },
-  { label: "German (Deutsch)", value: "de" },
-];
-
 type Appearance = {
   skinTone: string;
   hairColour: string;
@@ -92,6 +82,9 @@ export default function Onboarding() {
     gender: "",
     appearance: { skinTone: "", hairColour: "", hairStyle: "", eyeColour: "" },
     interests: [],
+    // V1 generates English only. The column and the per child data model stay, so
+    // multilingual is deferred rather than discarded, but nothing asks the parent to
+    // choose a language the pipeline would ignore. See rewrite-requirements.md.
     language: "en-GB",
   });
   const [customInput, setCustomInput] = useState("");
@@ -192,7 +185,6 @@ export default function Onboarding() {
       );
     }
     if (step === 5) return data.interests.length > 0;
-    if (step === 6) return data.language !== "";
     return false;
   };
 
@@ -499,28 +491,6 @@ export default function Onboarding() {
                     ))}
                 </div>
               )}
-            </StepWrapper>
-          )}
-
-          {/* Step 6: Language */}
-          {step === 6 && (
-            <StepWrapper key="step6">
-              <StepHeading>What language should stories be in?</StepHeading>
-              <div className="space-y-3">
-                {LANGUAGES.map((lang) => (
-                  <button
-                    key={lang.value}
-                    onClick={() => setData({ ...data, language: lang.value })}
-                    className={`w-full text-left px-5 py-4 rounded-xl border-2 font-medium transition-all ${
-                      data.language === lang.value
-                        ? "border-amber-warm bg-amber-warm/20 text-primary-foreground shadow-md"
-                        : "border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground hover:border-amber-warm/50"
-                    }`}
-                  >
-                    {lang.label}
-                  </button>
-                ))}
-              </div>
             </StepWrapper>
           )}
 

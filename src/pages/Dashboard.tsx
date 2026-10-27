@@ -19,16 +19,6 @@ import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-const LANGUAGES = [
-  { label: "English", value: "en-GB" },
-  { label: "Arabic", value: "ar" },
-  { label: "French", value: "fr" },
-  { label: "Spanish", value: "es" },
-  { label: "Urdu", value: "ur" },
-  { label: "Turkish", value: "tr" },
-  { label: "German", value: "de" },
-];
-
 
 type Story = {
   id: string;
@@ -147,11 +137,15 @@ function getPrevWeek(yearWeek: string): string {
   return `${y}-W${w}`;
 }
 
-function isNew(story: Story): boolean {
-  return story.parent_rating === null;
+// "New" used to mean `story.parent_rating === null`, i.e. nobody has rated it. That made every
+// story New forever, because nothing could ever rate one: `stories` has a SELECT policy and no
+// UPDATE policy, so the app cannot write to that table at all. It now means what it says: the
+// newest story, until this parent has opened it once, tracked cross device in `story_views`.
+function isNew(story: Story, latestStoryId: string | null, openedStoryIds: Set<string>): boolean {
+  return story.id === latestStoryId && !openedStoryIds.has(story.id);
 }
 
-function StoryCard({ story, childName }: { story: Story; childName?: string }) {
+function StoryCard({ story, childName, showNewBadge }: { story: Story; childName?: string; showNewBadge?: boolean }) {
   const navigate = useNavigate();
   const deliveryDate = story.delivered_at ?? story.created_at;
   const [coverUrl, setCoverUrl] = useState<string | null>(story.cover_image_url);
@@ -230,7 +224,7 @@ function StoryCard({ story, childName }: { story: Story; childName?: string }) {
       )}
 
       {/* New badge */}
-      {isNew(story) && (
+      {showNewBadge && (
         <span className="absolute top-2 right-2 bg-accent text-accent-foreground text-xs font-bold px-2 py-0.5 rounded-full shadow z-20">
           New! ✨
         </span>
@@ -284,6 +278,7 @@ export default function Dashboard() {
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   const child = children.find((c) => c.id === selectedChildId) ?? children[0] ?? null;
   const [stories, setStories] = useState<Story[]>([]);
+  const [openedStoryIds, setOpenedStoryIds] = useState<Set<string>>(new Set());
   const [loadingStories, setLoadingStories] = useState(true);
   const [parentName, setParentName] = useState<string>("");
   const navigate = useNavigate();
@@ -307,7 +302,7 @@ export default function Dashboard() {
     if (searchParams.get("checkout") === "success") {
       toast({
         title: "Welcome to Little Hero Library! 🎉",
-        description: "Your first story is being created — check back soon! ✨",
+        description: "Your first story is being created. Check back soon! ✨",
       });
       setSearchParams({}, { replace: true });
     }
@@ -344,14 +339,15 @@ export default function Dashboard() {
 
       return () => clearTimeout(timeout);
     }
-  }, [searchParams]);
+  }, [searchParams, child, stories.length]);
 
   const handleBuyStory = async () => {
     if (!child) return;
     setBuyingStory(true);
     try {
       const origin = window.location.origin;
-      const res = await fetch("https://bashk1.app.n8n.cloud/webhook/create-checkout", {
+      const { WEBHOOKS } = await import("@/lib/config");
+      const res = await fetch(WEBHOOKS.createCheckout, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -365,7 +361,11 @@ export default function Dashboard() {
       });
       if (!res.ok) throw new Error("Failed to create checkout");
       const { url } = await res.json();
-      if (url) window.location.href = url;
+      if (url) {
+        const parsed = new URL(url);
+        if (!parsed.hostname.endsWith("stripe.com")) throw new Error("Invalid checkout URL");
+        window.location.href = url;
+      }
     } catch (err) {
       toast({ title: "Something went wrong", description: "Please try again." });
     } finally {
@@ -413,8 +413,36 @@ export default function Dashboard() {
       });
   }, [child]);
 
-  const handleReferral = () => {
-    const referralUrl = `${window.location.origin}/?ref=${user?.id?.slice(0, 8)}`;
+  // Which stories this parent has already opened, so the "New!" badge clears on every device
+  // rather than only the one it was read on. A failure here is silent on purpose: the worst
+  // case is a badge that lingers, which must never block the library from loading.
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from("story_views")
+      .select("story_id")
+      .eq("profile_id", user.id)
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Couldn't load story views:", error);
+          return;
+        }
+        setOpenedStoryIds(new Set((data ?? []).map((r: { story_id: string }) => r.story_id)));
+      });
+  }, [user?.id, stories]);
+
+  const handleReferral = async () => {
+    // Fetch proper referral_code from profiles table
+    let refCode = user?.id?.slice(0, 8) ?? "";
+    if (user) {
+      const { data } = await supabase
+        .from("profiles")
+        .select("referral_code")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (data?.referral_code) refCode = data.referral_code;
+    }
+    const referralUrl = `${window.location.origin}/?ref=${refCode}`;
     navigator.clipboard.writeText(referralUrl).then(() => {
       toast({ title: "Link copied! 🎉", description: "Share it with friends and family." });
     });
@@ -500,7 +528,7 @@ export default function Dashboard() {
                       {child.name}
                     </h2>
                   <p className="text-muted-foreground text-sm">
-                      Age {child.age} · {LANGUAGES.find((l) => l.value === child.language)?.label?.split(" ")[0] ?? child.language}
+                      Age {child.age}
                     </p>
                   </div>
                 </div>
@@ -571,7 +599,14 @@ export default function Dashboard() {
               {stories.length === 0 ? (
                 <EmptyStories />
               ) : (
-                stories.map((story) => <StoryCard key={story.id} story={story} childName={child?.name} />)
+                stories.map((story) => (
+                  <StoryCard
+                    key={story.id}
+                    story={story}
+                    childName={child?.name}
+                    showNewBadge={isNew(story, stories[0]?.id ?? null, openedStoryIds)}
+                  />
+                ))
               )}
             </div>
           )}

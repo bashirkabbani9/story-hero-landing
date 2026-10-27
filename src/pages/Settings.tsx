@@ -68,16 +68,6 @@ const INTERESTS = [
   { label: "Pirates",   emoji: "🏴‍☠️" },
 ];
 
-const LANGUAGES = [
-  { label: "English (British)", value: "en-GB" },
-  { label: "Arabic (العربية)", value: "ar" },
-  { label: "French (Français)", value: "fr" },
-  { label: "Spanish (Español)", value: "es" },
-  { label: "Urdu (اردو)",       value: "ur" },
-  { label: "Turkish (Türkçe)", value: "tr" },
-  { label: "German (Deutsch)", value: "de" },
-];
-
 // ─── Appearance helpers ──────────────────────────────────────────────────────
 
 function parseCharacterDescription(desc: string | null | undefined) {
@@ -176,7 +166,6 @@ function ChildEditor({ child, onSaved }: { child: Child; onSaved: () => void }) 
   const [name, setName]         = useState(child.name);
   const [age, setAge]           = useState(child.age);
   const [interests, setInterests] = useState<string[]>(child.interests ?? []);
-  const [language, setLanguage] = useState(child.language ?? "en-GB");
   const [saving, setSaving]     = useState(false);
   const [saved, setSaved]       = useState(false);
   const [customInput, setCustomInput] = useState("");
@@ -204,7 +193,10 @@ function ChildEditor({ child, onSaved }: { child: Child; onSaved: () => void }) 
     const characterDescription = buildCharacterDescription(age, child.gender, appearance);
     const { error } = await supabase
       .from("children")
-      .update({ name, age, interests, language, character_description: characterDescription })
+      // `language` is deliberately not updated here. V1 generates English only, so the
+      // control was removed, and leaving the column out of the payload preserves whatever
+      // each child already had rather than silently overwriting it with en-GB.
+      .update({ name, age, interests, character_description: characterDescription })
       .eq("id", child.id);
 
     setSaving(false);
@@ -376,26 +368,6 @@ function ChildEditor({ child, onSaved }: { child: Child; onSaved: () => void }) 
         )}
       </div>
 
-      {/* Language */}
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-3">Story language</label>
-        <div className="space-y-2">
-          {LANGUAGES.map((lang) => (
-            <button
-              key={lang.value}
-              onClick={() => setLanguage(lang.value)}
-              className={`w-full text-left px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all ${
-                language === lang.value
-                  ? "border-primary bg-purple-light text-primary"
-                  : "border-border bg-background text-foreground hover:border-primary/40"
-              }`}
-            >
-              {lang.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
       <button
         onClick={handleSave}
         disabled={saving || !name.trim()}
@@ -451,7 +423,7 @@ function ChildCard({
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground">{child.name}</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Age {child.age} · {LANGUAGES.find((l) => l.value === child.language)?.label ?? child.language}
+            Age {child.age}
           </p>
           {child.interests?.length > 0 && (
             <p className="text-xs text-muted-foreground mt-0.5 truncate">
@@ -532,15 +504,21 @@ export default function Settings() {
   const handleManageSubscription = async () => {
     setLoadingPortal(true);
     try {
-      const res = await fetch("https://bashk1.app.n8n.cloud/webhook/customer-portal", {
+      const { WEBHOOKS } = await import("@/lib/config");
+      const res = await fetch(WEBHOOKS.customerPortal, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ profileId: user!.id }),
       });
       if (!res.ok) throw new Error("Request failed");
       const data = await res.json();
-      if (data.url) window.open(data.url, "_blank");
-      else throw new Error("No URL returned");
+      if (data.url) {
+        const parsed = new URL(data.url);
+        if (!parsed.hostname.endsWith("stripe.com")) throw new Error("Invalid portal URL");
+        window.open(data.url, "_blank");
+      } else {
+        throw new Error("No URL returned");
+      }
     } catch {
       toast({ title: "Something went wrong", description: "Please try again or email hello@littleherolibrary.com" });
     } finally {
@@ -556,7 +534,10 @@ export default function Settings() {
       .select("email_notifications")
       .eq("id", user.id)
       .maybeSingle()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Failed to fetch notification preference:", error);
+        }
         setEmailNotifs(data?.email_notifications ?? true);
         setLoadingNotifs(false);
       });

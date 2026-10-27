@@ -277,7 +277,7 @@ function StoryTextPage({
               fontWeight: 700,
             }}
           >
-            — {pageNumber} —
+            · {pageNumber} ·
           </span>
           <span style={{ fontSize: isMobile ? "12px" : "14px", opacity: 0.4 }}>{decoLeft}</span>
         </div>
@@ -448,7 +448,7 @@ const StoryPageCombined = forwardRef<
               fontWeight: 700,
             }}
           >
-            — {pageNumber} —
+            · {pageNumber} ·
           </span>
         </div>
       </div>
@@ -523,7 +523,7 @@ function getTextFontSize(text: string, age: number | null, isMobile: boolean): s
 export default function StoryReader() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { children } = useAuth();
+  const { user, children } = useAuth();
   const isMobile = useIsMobile();
 
   const { bedtime, toggle: toggleBedtime } = useBedtimeMode();
@@ -662,9 +662,23 @@ export default function StoryReader() {
         if (childData?.age) setChildAge(childData.age);
       }
 
-      // Mark story as opened (set parent_rating to 0 if null, so "New!" badge disappears across devices)
-      if (storyRes.data.parent_rating === null) {
-        supabase.from("stories").update({ parent_rating: 0 }).eq("id", id).then(() => {});
+      // Mark story as opened, cross device, in `story_views`.
+      //
+      // This used to write `parent_rating: 0` to `stories`, which failed twice over. It is
+      // blocked by RLS, because `stories` has a SELECT policy and no UPDATE policy, so the
+      // write silently errored to the console and the badge never cleared. And it overloaded
+      // the star rating column, so "opened" and "rated zero stars" were the same event.
+      //
+      // `story_views` is insert only and unique on (story_id, profile_id), so re-opening is a
+      // no-op conflict rather than an update. Best effort: failing to record a view must never
+      // stop a child reading their story.
+      if (user?.id) {
+        supabase
+          .from("story_views")
+          .upsert({ story_id: id, profile_id: user.id }, { onConflict: "story_id,profile_id", ignoreDuplicates: true })
+          .then(({ error: viewErr }) => {
+            if (viewErr) console.error("Failed to record story view:", viewErr);
+          });
       }
 
       setLoading(false);
