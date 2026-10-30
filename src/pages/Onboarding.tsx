@@ -66,9 +66,17 @@ type OnboardingData = {
   age: number | null;
   gender: string;
   appearance: Appearance;
+  // null until the parent has answered, true if they consented, false if they declined.
+  // Deliberately tri-state: "has not been asked yet" and "said no" are different things, and
+  // only the first should block the step.
+  appearanceConsent: boolean | null;
   interests: string[];
   language: string;
 };
+
+// Which wording the parent agreed to, stored alongside the consent so a consent given under
+// older wording stays distinguishable from one given under the current text.
+const APPEARANCE_CONSENT_VERSION = "2026-10-29";
 
 export default function Onboarding() {
   const { user, children: existingChildren, refreshChildren } = useAuth();
@@ -81,6 +89,7 @@ export default function Onboarding() {
     age: null,
     gender: "",
     appearance: { skinTone: "", hairColour: "", hairStyle: "", eyeColour: "" },
+    appearanceConsent: null,
     interests: [],
     // V1 generates English only. The column and the per child data model stay, so
     // multilingual is deferred rather than discarded, but nothing asks the parent to
@@ -113,6 +122,20 @@ export default function Onboarding() {
   };
 
   const buildCharacterDescription = () => {
+    // Declined is a real, supported path, not a degraded one.
+    //
+    // The child still gets a character reference image, generated from their age and gender
+    // alone, and every page of every story is then drawn from that picture. So they still look
+    // identical throughout. What changes is only that the likeness is not matched to their own
+    // skin, hair and eyes.
+    //
+    // This path existing is what makes the consent valid. Consent is not freely given if the
+    // service is conditional on it, so a product that refused to work without appearance data
+    // would have collected invalid consent, which is worse than collecting none.
+    if (data.appearanceConsent !== true) {
+      return `A ${data.age}-year-old ${data.gender}`;
+    }
+
     const skin = SKIN_TONES.find((s) => s.hex === data.appearance.skinTone)?.desc ?? "";
     const hairCol = HAIR_COLOURS.find((h) => h.hex === data.appearance.hairColour)?.desc ?? "";
     const hairSty = data.appearance.hairStyle ? data.appearance.hairStyle.toLowerCase() : "";
@@ -136,6 +159,7 @@ export default function Onboarding() {
     setStep(TOTAL_STEPS + 1);
 
     const characterDescription = buildCharacterDescription();
+    const consented = data.appearanceConsent === true;
 
     const { error: insertError } = await supabase.from("children").insert({
       profile_id: user.id,
@@ -145,6 +169,12 @@ export default function Onboarding() {
       interests: data.interests,
       language: data.language,
       character_description: characterDescription,
+      // The record of consent, written in the same statement as the data it covers so the two
+      // cannot drift apart. When the parent declines, character_description holds only age and
+      // gender, so there is no appearance data sitting behind a false flag.
+      appearance_consent: consented,
+      appearance_consent_at: consented ? new Date().toISOString() : null,
+      appearance_consent_version: consented ? APPEARANCE_CONSENT_VERSION : null,
     });
 
     if (insertError) {
@@ -177,8 +207,12 @@ export default function Onboarding() {
     if (step === 2) return data.age !== null;
     if (step === 3) return data.gender !== "";
     if (step === 4) {
-      // All four are required. The illustration prompt uses every one of them, and a blank
-      // field means DALL-E invents that feature differently on each of the six pages.
+      // Declining is a complete answer and moves the parent on immediately.
+      if (data.appearanceConsent === false) return true;
+      // Not answered yet, so there is nothing to continue with.
+      if (data.appearanceConsent !== true) return false;
+      // Consented, so the details actually have to be filled in. All four are required because
+      // a half-filled description describes a different child than the one intended.
       const a = data.appearance;
       return (
         a.skinTone !== "" && a.hairColour !== "" && a.hairStyle !== "" && a.eyeColour !== ""
@@ -338,10 +372,76 @@ export default function Onboarding() {
             <StepWrapper key="step4">
               <StepHeading>What does {data.name} look like?</StepHeading>
               <p className="text-primary-foreground/70 text-center mb-4 -mt-2 text-sm">
-                This helps us create illustrations that look like your child
+                This is the one thing we ask permission for separately
               </p>
 
-              <div className="space-y-5">
+              {/*
+                Asked separately and on purpose.
+                Skin tone and hair texture can say something about a child's ethnicity, which UK
+                law protects more strictly than the rest of a profile. So this is its own
+                question with its own answer, the box starts unticked, and declining is a real
+                option that still gets you a book rather than a dead end.
+              */}
+              <div className="rounded-xl bg-primary-foreground/10 p-4 mb-5 text-left">
+                <p className="text-primary-foreground/90 text-sm leading-relaxed mb-3">
+                  To draw {data.name} as themselves we would like to use their skin tone, hair and
+                  eye colour. Because those details can say something about a child's background,
+                  we ask separately rather than treating it as part of signing up.
+                </p>
+
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={data.appearanceConsent === true}
+                    onChange={(e) =>
+                      setData((d) => ({
+                        ...d,
+                        appearanceConsent: e.target.checked ? true : null,
+                        // Unticking clears the details as well, so nothing is left behind that
+                        // the parent has not agreed to.
+                        appearance: e.target.checked
+                          ? d.appearance
+                          : { skinTone: "", hairColour: "", hairStyle: "", eyeColour: "" },
+                      }))
+                    }
+                    className="mt-1 w-5 h-5 flex-shrink-0 rounded accent-accent"
+                  />
+                  <span className="text-primary-foreground text-sm font-medium">
+                    Yes, use these details to draw {data.name}
+                  </span>
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setData((d) => ({
+                      ...d,
+                      appearanceConsent: false,
+                      appearance: { skinTone: "", hairColour: "", hairStyle: "", eyeColour: "" },
+                    }))
+                  }
+                  className={`mt-3 w-full text-left text-sm rounded-lg px-3 py-2 transition-colors ${
+                    data.appearanceConsent === false
+                      ? "bg-primary-foreground/25 text-primary-foreground font-medium"
+                      : "text-primary-foreground/70 hover:bg-primary-foreground/10"
+                  }`}
+                >
+                  No thanks, draw {data.name} from their name and age instead
+                </button>
+
+                <p className="text-primary-foreground/60 text-xs mt-3 leading-relaxed">
+                  {data.appearanceConsent === false
+                    ? `${data.name} will still be the hero and will still look the same in every picture of every story. Their character just will not be matched to their own colouring.`
+                    : "You can change your mind at any time in Settings, and we will delete these details and the character picture built from them."}
+                </p>
+              </div>
+
+              <div
+                className={`space-y-5 transition-opacity ${
+                  data.appearanceConsent === true ? "" : "opacity-40 pointer-events-none"
+                }`}
+                aria-hidden={data.appearanceConsent !== true}
+              >
                 <div>
                   <p className="text-primary-foreground/80 text-xs font-medium mb-2">Skin tone</p>
                   <div className="flex gap-2 justify-center">

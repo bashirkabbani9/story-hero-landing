@@ -170,6 +170,50 @@ function ChildEditor({ child, onSaved }: { child: Child; onSaved: () => void }) 
   const [saved, setSaved]       = useState(false);
   const [customInput, setCustomInput] = useState("");
   const [appearance, setAppearance] = useState(() => parseCharacterDescription((child as any).character_description));
+  const [withdrawing, setWithdrawing] = useState(false);
+
+  const handleWithdrawAppearance = async () => {
+    setWithdrawing(true);
+    try {
+      const { WEBHOOKS } = await import("@/lib/config");
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("No session");
+
+      const res = await fetch(WEBHOOKS.deleteAccount, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        // The endpoint takes the account from the verified token. The body only ever says WHICH
+        // of the caller's own children, and it refuses a child that is not theirs.
+        body: JSON.stringify({ action: "withdraw-appearance", childId: child.id }),
+      });
+      if (!res.ok) throw new Error(`Withdrawal failed with ${res.status}`);
+
+      toast({
+        title: "Details removed",
+        description: `We have deleted ${child.name}'s appearance details and drawn them a new character.`,
+      });
+      onSaved();
+    } catch {
+      toast({
+        title: "Couldn't remove those details",
+        description:
+          "Nothing has been changed. Please try again, or email hello@littleherolibrary.com.",
+        variant: "destructive",
+      });
+    } finally {
+      setWithdrawing(false);
+    }
+  };
+
+  const customInterests = child.interests?.filter(
+    (i) => !INTERESTS.some((p) => p.label === i)
+  );
+
 
   const toggleInterest = (label: string) =>
     setInterests((prev) =>
@@ -247,6 +291,29 @@ function ChildEditor({ child, onSaved }: { child: Child; onSaved: () => void }) 
       {/* Appearance */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-3">Appearance</label>
+
+        {/*
+          Withdrawing is the other half of asking.
+          Consent is only valid if it is as easy to take back as it was to give, so this does the
+          real thing: it clears the appearance details AND replaces the character reference image
+          that was built from them, because that picture is the child's skin tone and hair
+          rendered into a file. A replacement is generated from their age and gender so they
+          still look the same from page to page afterwards.
+        */}
+        <div className="mb-4 rounded-lg bg-secondary/60 p-3">
+          <p className="text-xs text-muted-foreground leading-relaxed mb-2">
+            You gave permission for these details to be used to draw {child.name}. You can take
+            that back at any time.
+          </p>
+          <button
+            type="button"
+            disabled={withdrawing}
+            onClick={handleWithdrawAppearance}
+            className="text-xs font-medium text-destructive hover:underline disabled:opacity-50"
+          >
+            {withdrawing ? "Removing..." : "Stop using these details"}
+          </button>
+        </div>
 
         <p className="text-xs text-muted-foreground mb-2">Skin tone</p>
         <div className="flex gap-2 mb-4">
@@ -398,11 +465,6 @@ function ChildCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [deletingChild, setDeletingChild] = useState(false);
-
-  const customInterests = child.interests?.filter(
-    (i) => !INTERESTS.some((p) => p.label === i)
-  );
-
   const handleDelete = async () => {
     setDeletingChild(true);
     const { error } = await supabase.from("children").delete().eq("id", child.id);
@@ -562,15 +624,42 @@ export default function Settings() {
 
   const handleDeleteAccount = async () => {
     setDeleting(true);
-    if (user) {
-      const { error: childErr } = await supabase.from("children").delete().eq("profile_id", user.id);
-      const { error: profileErr } = await supabase.from("profiles").delete().eq("id", user.id);
-      if (childErr || profileErr) {
-        toast({ title: "Something went wrong", description: "Please try again or contact support.", variant: "destructive" });
-        setDeleting(false);
-        return;
-      }
+
+    // Deleting from here used to mean two `supabase.from(...).delete()` calls and a sign out.
+    // That removed the rows and left the child's illustrations in storage and the parent's
+    // auth user, and therefore their email address, in place indefinitely. Neither can be
+    // fixed in the browser: storage objects have no foreign key to cascade from, and deleting
+    // an auth user needs the service key. So the erasure runs server side and this call waits
+    // for it rather than assuming it worked.
+    try {
+      const { WEBHOOKS } = await import("@/lib/config");
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("No session");
+
+      const res = await fetch(WEBHOOKS.deleteAccount, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: "{}",
+      });
+      if (!res.ok) throw new Error(`Erasure failed with ${res.status}`);
+    } catch {
+      // Deliberately does not sign out. Leaving the parent signed in is what makes a retry
+      // possible, and the endpoint is idempotent so retrying is safe.
+      toast({
+        title: "We couldn't delete your account",
+        description:
+          "Your account has not been fully deleted. Please try again, or email hello@littleherolibrary.com and we will remove it for you.",
+        variant: "destructive",
+      });
+      setDeleting(false);
+      return;
     }
+
     await signOut();
     navigate("/", { replace: true });
   };

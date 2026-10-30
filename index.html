@@ -3,19 +3,170 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- TODO: Set the document title to the name of your application -->
     <title>Little Hero Library — Personalised Bedtime Stories for Children</title>
-    <meta name="description" content="Every Sunday, a brand new personalised story arrives in your child's library — where they are the hero. From £5.99/month." />
+    <meta name="description" content="Every Sunday, a brand new personalised bedtime story arrives in your child's library — where they are the hero. Beautiful AI illustrations. From £5.99/month." />
     <meta name="author" content="Little Hero Library" />
+    <meta name="theme-color" content="#5B3A8C" />
 
-    <meta property="og:title" content="Little Hero Library" />
-    <meta property="og:description" content="Personalised bedtime stories where your child is the hero. A new story every Sunday." />
+    <!--
+      Icons. Declared explicitly because there was no icon link at all until 2026-10-29, so every
+      browser fell back to /favicon.ico, which was still Lovable's logo from the day the app was
+      scaffolded. The SVG is served to anything modern and the .ico is the fallback.
+    -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Canonical -->
+    <link rel="canonical" href="https://www.littleherolibrary.com/" />
+
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="Little Hero Library" />
+    <meta property="og:title" content="Little Hero Library — Personalised Bedtime Stories for Children" />
+    <meta property="og:description" content="Every Sunday, a brand new personalised bedtime story arrives in your child's library — where they are the hero. Beautiful AI illustrations. From £5.99/month." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:image" content="https://www.littleherolibrary.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Little Hero Library — Personalised bedtime stories where your child is the hero" />
     <meta property="og:url" content="https://www.littleherolibrary.com" />
+    <meta property="og:locale" content="en_GB" />
 
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Little Hero Library — Personalised Bedtime Stories" />
+    <meta name="twitter:description" content="Every Sunday, a brand new personalised story arrives in your child's library — where they are the hero." />
     <meta name="twitter:image" content="https://www.littleherolibrary.com/og-image.png" />
+
+    <!-- Preconnect to external origins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Structured Data: WebSite (enables sitelinks search box) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Little Hero Library",
+      "url": "https://www.littleherolibrary.com",
+      "description": "Personalised bedtime stories where your child is the hero. A new story every Sunday.",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://www.littleherolibrary.com/?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- Structured Data: Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Little Hero Library",
+      "url": "https://www.littleherolibrary.com",
+      "logo": "https://www.littleherolibrary.com/og-image.png",
+      "description": "Personalised bedtime stories where your child is the hero. A new story every Sunday.",
+      "email": "hello@littleherolibrary.com",
+      "sameAs": []
+    }
+    </script>
+
+    <!-- Structured Data: Product -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": "Little Hero Library Subscription",
+      "description": "Weekly personalised bedtime stories with beautiful AI illustrations, delivered every Sunday. Your child is the hero of every story.",
+      "brand": {
+        "@type": "Brand",
+        "name": "Little Hero Library"
+      },
+      "offers": {
+        "@type": "AggregateOffer",
+        "priceCurrency": "GBP",
+        "lowPrice": "7.99",
+        "highPrice": "71.88",
+        "offerCount": "2",
+        "offers": [
+          {
+            "@type": "Offer",
+            "name": "Monthly Plan",
+            "price": "7.99",
+            "priceCurrency": "GBP",
+            "priceValidUntil": "2027-12-31",
+            "availability": "https://schema.org/InStock",
+            "url": "https://www.littleherolibrary.com/pricing"
+          },
+          {
+            "@type": "Offer",
+            "name": "Annual Plan",
+            "price": "71.88",
+            "priceCurrency": "GBP",
+            "priceValidUntil": "2027-12-31",
+            "availability": "https://schema.org/InStock",
+            "url": "https://www.littleherolibrary.com/pricing"
+          }
+        ]
+      }
+    }
+    </script>
+
+    <!--
+      There is deliberately no review or aggregateRating markup here.
+
+      This block previously published three five star reviews from "Sarah T.", "James R." and
+      "Priya M.", including an invented detail about an autistic child, at a point when the
+      product had no customers at all. Removed 2026-10-30.
+
+      Do not add it back until the reviews are real and the people are real. Fake reviews are
+      unlawful in the UK under the Digital Markets, Competition and Consumers Act, and Google's
+      structured data policy prohibits review markup for reviews that were never given. The same
+      three names are still hard coded in src/components/Testimonials.tsx and must go the same way.
+    -->
+
+    <!-- Structured Data: FAQ -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How does Little Hero Library work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Every Sunday at 5pm, a brand new personalised bedtime story appears in your child's library. Each story features your child as the hero, with beautiful AI-generated illustrations. Simply set up a child profile with their name, age, and interests, and we do the rest."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How much does Little Hero Library cost?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Little Hero Library is £7.99 per month, or £71.88 for a year, which works out at £5.99 a month. You can try it free with a personalised sample story, no credit card needed."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What age range are the stories suitable for?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Our stories are designed for children aged 3 to 12. Each story is tailored to your child's age to ensure the language, themes, and complexity are age-appropriate."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is my child's data safe?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We collect only what is needed to make a story about your child: their first name, age, gender, and the interests and appearance details you choose to give us. We never collect surnames, photographs, school names or addresses. Data is encrypted in transit and at rest, and deleting your account removes everything, including the illustrations. See our Privacy Policy for the full detail."
+          }
+        }
+      ]
+    }
+    </script>
   </head>
 
   <body>

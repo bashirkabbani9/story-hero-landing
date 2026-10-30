@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Little Hero Library">
+  <title>Little Hero Library</title>
+  <!--
+    An open book in the product's own colours: the deep purple used across the app and the story
+    emails, the warm amber accent, and the cream the emails are set on.
+
+    Drawn for 16px first. The amber spine runs the full height of the pages rather than sitting
+    under them, because a thin gutter is the first thing to disappear when a favicon is scaled
+    down, and without it the mark collapses into a blob.
+  -->
+  <rect width="1024" height="1024" rx="225" fill="#5B3E8A"/>
+  <polygon points="118,352 512,291 906,352 906,732 512,804 118,732" fill="#F7B23B"/>
+  <polygon points="154,338 456,276 456,768 154,696" fill="#FFF8F0"/>
+  <polygon points="870,338 568,276 568,768 870,696" fill="#FFF8F0"/>
+</svg>
