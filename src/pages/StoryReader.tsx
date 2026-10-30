@@ -14,7 +14,6 @@ type Story = {
   title: string;
   cover_image_url: string | null;
   status: string;
-  parent_rating: number | null;
   created_at: string;
 };
 
@@ -52,28 +51,62 @@ function useBedtimeMode() {
 
 // ─── Star rating ────────────────────────────────────────────────────────────
 
+// Ratings live in `story_ratings`, one row per (story, parent), not in `stories.parent_rating`.
+//
+// This feature never worked. It wrote `parent_rating` to `stories`, which has a SELECT policy
+// and no UPDATE policy, so RLS refused every click, the stars snapped back and the only trace
+// was a console error nobody was reading. Same root cause as the New badge, and the same fix as
+// `story_views`: a table the parent is actually allowed to write, rather than an UPDATE policy
+// on `stories` that would also hand them `title`, `status` and `safety_checked`.
 function StarRating({
   storyId,
-  initial,
   bedtime,
 }: {
   storyId: string;
-  initial: number | null;
   bedtime: boolean;
 }) {
-  const [rating, setRating] = useState<number>(initial ?? 0);
+  const { user } = useAuth();
+  const [rating, setRating] = useState<number>(0);
   const [hover, setHover] = useState<number>(0);
   const [saved, setSaved] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  // Load this parent's own rating, so it survives a reload and a different device.
+  useEffect(() => {
+    if (!user?.id) return;
+    let active = true;
+    supabase
+      .from("story_ratings")
+      .select("rating")
+      .eq("story_id", storyId)
+      .eq("profile_id", user.id)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error) console.error("Failed to load rating:", error);
+        if (active && data?.rating) setRating(data.rating);
+      });
+    return () => {
+      active = false;
+    };
+  }, [storyId, user?.id]);
 
   const handleRate = async (val: number) => {
+    if (!user?.id) return;
+    const previous = rating;
     setRating(val);
     setSaved(false);
+    setFailed(false);
     const { error } = await supabase
-      .from("stories")
-      .update({ parent_rating: val })
-      .eq("id", storyId);
+      .from("story_ratings")
+      .upsert(
+        { story_id: storyId, profile_id: user.id, rating: val },
+        { onConflict: "story_id,profile_id" },
+      );
     if (error) {
-      setRating(initial ?? 0);
+      // A failure here is now visible on screen. Silence is what hid this bug for months.
+      console.error("Failed to save rating:", error);
+      setRating(previous);
+      setFailed(true);
     } else {
       setSaved(true);
     }
@@ -92,7 +125,11 @@ function StarRating({
           textShadow: "1px 1px 4px rgba(0,0,0,0.5)",
         }}
       >
-        {saved ? "Thanks for rating! ⭐" : "Rate this story"}
+        {failed
+          ? "That did not save. Tap a star to try again"
+          : saved
+            ? "Thanks for rating! ⭐"
+            : "Rate this story"}
       </p>
       <div className="flex gap-1">
         {[1, 2, 3, 4, 5].map((n) => (
@@ -337,7 +374,7 @@ const StoryPageCombined = forwardRef<
         background: bedtime ? "#1a1a2e" : "#F5F0E8",
       }}
     >
-      {/* Illustration in top portion — shorter container = less side-cropping */}
+      {/* Illustration in top portion. Shorter container = less side-cropping */}
       {illustrationUrl ? (
         <img
           src={illustrationUrl}
@@ -543,7 +580,7 @@ export default function StoryReader() {
   // Touch tracking for mobile swipe
   const touchStartX = useRef<number | null>(null);
 
-  // Mobile nav button refs — use native DOM listeners to bypass react-pageflip interference
+  // Mobile nav button refs. Use native DOM listeners to bypass react-pageflip interference
   const backBtnRef = useRef<HTMLButtonElement>(null);
   const fwdBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -587,7 +624,7 @@ export default function StoryReader() {
       }
     };
 
-    // Attach native listeners — these fire before any library can intercept
+    // Attach native listeners. These fire before any library can intercept
     backBtn.addEventListener("touchend", handleBack, { capture: true });
     backBtn.addEventListener("click", handleBack);
     fwdBtn.addEventListener("touchend", handleFwd, { capture: true });
@@ -865,7 +902,7 @@ export default function StoryReader() {
             overflow: "hidden",
           }}
         >
-          {/* Cover illustration — edge to edge */}
+          {/* Cover illustration, edge to edge */}
           {coverImageUrl ? (
             <img
               src={coverImageUrl}
@@ -1082,7 +1119,7 @@ export default function StoryReader() {
                 <span className="text-6xl animate-float">🌙</span>
                 <h2 style={{ ...storyFont, fontSize: isMobile ? "32px" : "42px" }}>The End</h2>
                 <p style={{ ...storyFont, fontSize: isMobile ? "16px" : "20px", opacity: 0.8 }}>Sweet dreams, {childName} ✨</p>
-                <StarRating storyId={story.id} initial={story.parent_rating} bedtime={bedtime} />
+                <StarRating storyId={story.id} bedtime={bedtime} />
                 <div className="flex flex-col sm:flex-row gap-3 mt-2">
                   <button
                     onClick={(e) => { e.stopPropagation(); setBookOpened(false); }}
@@ -1108,7 +1145,7 @@ export default function StoryReader() {
       </div>
     </div>
 
-    {/* ── Mobile nav arrows — AFTER container in DOM so they're on top, using refs for native event listeners ── */}
+    {/* ── Mobile nav arrows, AFTER container in DOM so they're on top, using refs for native event listeners ── */}
     {isMobile && (
       <>
         <button

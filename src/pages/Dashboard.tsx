@@ -28,7 +28,6 @@ type Story = {
   status: string;
   created_at: string;
   delivered_at: string | null;
-  parent_rating: number | null;
 };
 
 
@@ -347,6 +346,7 @@ export default function Dashboard() {
     try {
       const origin = window.location.origin;
       const { WEBHOOKS } = await import("@/lib/config");
+      const { isStripeUrl } = await import("@/lib/stripeCheckout");
       const res = await fetch(WEBHOOKS.createCheckout, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -362,8 +362,7 @@ export default function Dashboard() {
       if (!res.ok) throw new Error("Failed to create checkout");
       const { url } = await res.json();
       if (url) {
-        const parsed = new URL(url);
-        if (!parsed.hostname.endsWith("stripe.com")) throw new Error("Invalid checkout URL");
+        if (!isStripeUrl(url)) throw new Error("Invalid checkout URL");
         window.location.href = url;
       }
     } catch (err) {
@@ -491,7 +490,7 @@ export default function Dashboard() {
           </h1>
         </div>
 
-        {/* Child selector tabs — shown only when there are multiple children */}
+        {/* Child selector tabs, shown only when there are multiple children */}
         {children.length > 1 && (
           <div className="animate-fade-up flex gap-2 flex-wrap" style={{ animationDelay: "0.03s" }}>
             {children.map((c) => (
@@ -511,7 +510,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* SECTION 1 — CHILD CARD */}
+        {/* SECTION 1: CHILD CARD */}
         {child && (
           <section className="animate-fade-up" style={{ animationDelay: "0.05s" }}>
             <div className="bg-card border border-border rounded-3xl p-6 shadow-card">
@@ -569,7 +568,7 @@ export default function Dashboard() {
           </section>
         )}
 
-        {/* SECTION 2 — STORY LIBRARY */}
+        {/* SECTION 2: STORY LIBRARY */}
         <section className="animate-fade-up" style={{ animationDelay: "0.1s" }}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-display text-xl font-bold text-foreground">
@@ -612,7 +611,7 @@ export default function Dashboard() {
           )}
         </section>
 
-        {/* SECTION 3 — QUICK ACTIONS */}
+        {/* SECTION 3: QUICK ACTIONS */}
         <section className="animate-fade-up" style={{ animationDelay: "0.15s" }}>
           <h2 className="font-display text-xl font-bold text-foreground mb-4">Quick Actions</h2>
 

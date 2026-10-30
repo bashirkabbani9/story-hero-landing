@@ -567,16 +567,32 @@ export default function Settings() {
     setLoadingPortal(true);
     try {
       const { WEBHOOKS } = await import("@/lib/config");
+      const { isStripeUrl } = await import("@/lib/stripeCheckout");
+
+      // Send the caller's own session token and NO id.
+      //
+      // This used to post `{ profileId: user.id }` and nothing else, and the endpoint trusted
+      // it: anyone who knew a profile UUID could ask for that parent's Stripe billing portal
+      // session, which is their invoices, their payment method and the power to cancel. The
+      // endpoint now takes the account from the verified token and ignores the body, the same
+      // way account deletion has since 2026-10-29.
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) throw new Error("No session");
+
       const res = await fetch(WEBHOOKS.customerPortal, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ profileId: user!.id }),
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: "{}",
       });
-      if (!res.ok) throw new Error("Request failed");
+      if (!res.ok) throw new Error(`Request failed with ${res.status}`);
       const data = await res.json();
       if (data.url) {
-        const parsed = new URL(data.url);
-        if (!parsed.hostname.endsWith("stripe.com")) throw new Error("Invalid portal URL");
+        if (!isStripeUrl(data.url)) throw new Error("Invalid portal URL");
         window.open(data.url, "_blank");
       } else {
         throw new Error("No URL returned");
