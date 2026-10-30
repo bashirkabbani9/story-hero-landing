@@ -74,7 +74,11 @@ export default function HeroSection() {
               <div className="absolute inset-0 bg-amber-warm/20 rounded-3xl blur-3xl scale-110" />
               <img
                 src={heroImage}
-                alt="Child reading a magical glowing storybook in bed"
+                alt="Child reading a magical glowing personalised bedtime storybook in bed"
+                loading="eager"
+                fetchPriority="high"
+                width={560}
+                height={480}
                 className="relative rounded-3xl shadow-2xl w-full object-cover"
                 style={{ maxHeight: "480px" }}
               />

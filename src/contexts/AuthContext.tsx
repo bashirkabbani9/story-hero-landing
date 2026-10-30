@@ -41,17 +41,17 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
   };
 
   useEffect(() => {
-    let done = false;
+    let initialised = false;
 
-    const handleSession = async (session: Session | null) => {
-      if (done) return;
-      done = true; // set immediately to prevent race condition
+    const applySession = async (session: Session | null) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
         try {
           await fetchChildren(session.user.id);
-        } catch {}
+        } catch (err) {
+          console.error("Failed to fetch children:", err);
+        }
       } else {
         setChildProfiles([]);
       }
@@ -61,27 +61,33 @@ export function AuthProvider({ children: reactChildren }: { children: ReactNode 
     // Set up auth state listener BEFORE getSession
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        handleSession(session);
+        if (!initialised) {
+          // Skip the initial event from onAuthStateChange — getSession handles it
+          return;
+        }
+        applySession(session);
       }
     );
 
-    // Then get initial session
+    // Get initial session (single source of truth for first load)
     supabase.auth.getSession().then(({ data: { session } }) => {
-      handleSession(session);
+      applySession(session);
+      initialised = true;
     }).catch(() => {
-      handleSession(null);
+      applySession(null);
+      initialised = true;
     });
 
-    // Safety net — if not fully loaded in 4s, clear state and go to login
+    // Safety net — if not fully loaded in 8s, clear state
     const timeout = setTimeout(() => {
-      if (!done) {
-        done = true;
+      if (!initialised) {
+        initialised = true;
         setUser(null);
         setSession(null);
         setChildProfiles([]);
         setLoading(false);
       }
-    }, 4000);
+    }, 8000);
 
     return () => {
       subscription.unsubscribe();

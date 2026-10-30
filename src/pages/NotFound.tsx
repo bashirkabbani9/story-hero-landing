@@ -1,6 +1,12 @@
 import { Link } from "react-router-dom";
+import { useSEO } from "@/hooks/useSEO";
 
 const NotFound = () => {
+  useSEO({
+    title: "Page Not Found",
+    description: "The page you're looking for doesn't exist. Return to Little Hero Library.",
+  });
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted">
       <div className="text-center">

@@ -1,7 +1,15 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useSEO } from "@/hooks/useSEO";
 
 export default function Terms() {
+  useSEO({
+    title: "Terms of Service",
+    description:
+      "Terms of Service for Little Hero Library — personalised bedtime stories subscription for children.",
+    canonical: "/terms",
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />

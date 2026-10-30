@@ -21,6 +21,9 @@ export default function Navbar() {
           <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:block">
             Pricing
           </a>
+          <a href="#faq" className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:block">
+            FAQ
+          </a>
           {!loading && !user && (
             <>
               <Link

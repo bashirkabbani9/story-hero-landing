@@ -3,8 +3,15 @@ import { Link, useNavigate } from "react-router-dom";
 import { Moon, Mail, Lock, User, Loader2, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { redirectToStripeCheckout, PENDING_PRICE_KEY } from "@/lib/stripeCheckout";
+import { useSEO } from "@/hooks/useSEO";
 
 export default function Signup() {
+  useSEO({
+    title: "Sign Up Free",
+    description:
+      "Create your free Little Hero Library account. Get a personalised bedtime story for your child — no credit card required.",
+    canonical: "/signup",
+  });
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ full_name: "", email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);

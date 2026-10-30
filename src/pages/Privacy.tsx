@@ -1,7 +1,15 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useSEO } from "@/hooks/useSEO";
 
 export default function Privacy() {
+  useSEO({
+    title: "Privacy Policy",
+    description:
+      "How Little Hero Library protects your privacy and your children's data. We only collect the minimum needed to personalise stories.",
+    canonical: "/privacy",
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
